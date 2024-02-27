@@ -1,8 +1,10 @@
 import threading
 import socket
+# add a text box somewhere to initialise the username 
 alias = input('Choose an alias >>> ')
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(('', ))
+currentMessage = ""
 
 
 def client_receive():
@@ -19,10 +21,18 @@ def client_receive():
             break
 
 
+def build_message():
+    while True:
+        # retreive input data 
+        currentMessage = ""
+        # send to GUI display, update label 
+
 def client_send():
     while True:
-        message = f'{alias}: {input("")}'
+        message = f'{alias}: {currentMessage}'
         client.send(message.encode('utf-8'))
+
+# build function to send change chat room question on call
 
 
 receive_thread = threading.Thread(target=client_receive)
@@ -30,3 +40,6 @@ receive_thread.start()
 
 send_thread = threading.Thread(target=client_send)
 send_thread.start()
+
+display_thread = threading.Thread(target=build_message)
+display_thread.start()
