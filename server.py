@@ -18,20 +18,23 @@ def broadcast(message, room):
     for client in clients[room]:
         client.send(message)
 
-def handle_client(client):
+def handle_client(client, room):
     while True:
         try:
             message = client.recv(1024)
-            broadcast(message)
+            broadcast(message, room)
             # add function to move rooms, remove from current room and place in a different one
         except:
-            index = clients.index(client)
-            clients.remove(client)
-            client.close()
-            alias = aliases[index]
-            broadcast(f'{alias} has left the chat room!'.encode('utf-8'))
-            aliases.remove(alias)
+            disconnect(client, room)
             break
+
+def disconnect(client, room):
+    index = clients[room].index(client)
+    clients[room].remove(client)
+    client.close()
+    alias = aliases[room][index]
+    broadcast(f'{alias} has left the chat room!'.encode('utf-8'))
+    aliases[room].remove(alias)
 
 def receive():
     while True:
@@ -47,7 +50,7 @@ def receive():
         print(f'The alias of this client is {alias}'.encode('utf-8'))
         broadcast(f'{alias} has connected to chat room {room}'.encode('utf-8'), room)
         client.send('you are now connected!'.encode('utf-8'))
-        thread = threading.Thread(target=handle_client, args=(client,))
+        thread = threading.Thread(target=handle_client, args=(client,room,))
         thread.start()
 
 
