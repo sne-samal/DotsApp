@@ -25,16 +25,20 @@ def handle_client(client, room):
             broadcast(message, room)
             # add function to move rooms, remove from current room and place in a different one
         except:
-            disconnect(client, room)
+            disconnect(client, room, "NULL")
             break
 
-def disconnect(client, room):
-    index = clients[room].index(client)
-    clients[room].remove(client)
-    client.close()
-    alias = aliases[room][index]
+def disconnect(client, currentRoom, newRoom):
+    index = clients[currentRoom].index(client)
+    clients[currentRoom].remove(client)
+    alias = aliases[currentRoom][index]
     broadcast(f'{alias} has left the chat room!'.encode('utf-8'))
-    aliases[room].remove(alias)
+    aliases[currentRoom].remove(alias)
+    
+    if(newRoom!="NULL"):
+        print()
+    else:
+        client.close()
 
 def receive():
     while True:
