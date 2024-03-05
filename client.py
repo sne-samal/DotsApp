@@ -2,6 +2,9 @@ import threading
 import socket
 # add a text box somewhere to initialise the username 
 alias = input('Choose an alias >>> ')
+# need to figure out how room initialisation works 
+room = 0
+# probably query the FPGA on initialisation for the value 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(('', ))
 currentMessage = ""
@@ -13,6 +16,8 @@ def client_receive():
             message = client.recv(1024).decode('utf-8')
             if message == "alias?":
                 client.send(alias.encode('utf-8'))
+            elif message == "room?":
+                client.send(str(room).encode('utf-8'))
             else:
                 print(message)
         except:
@@ -33,6 +38,9 @@ def client_send():
         client.send(message.encode('utf-8'))
 
 # build function to send change chat room question on call
+def change_room(newRoom):
+    room = newRoom
+    client.send((f'#### room: ({room})').encode('utf-8'))
 
 
 receive_thread = threading.Thread(target=client_receive)

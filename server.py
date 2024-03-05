@@ -76,7 +76,7 @@ def receive():
         client.send('alias?'.encode('utf-8'))
         alias = client.recv(1024)
         client.send('room?'.encode('utf-8'))
-        room = client.recv(1024)
+        room = int(client.recv(1024))
         aliases[room].append(alias)
         clients[room].append(client)
         print(f'The alias of this client is {alias}'.encode('utf-8'))
