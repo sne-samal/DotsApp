@@ -37,7 +37,6 @@ def client_send():
         message = f'{currentMessage}'
         client.send(message.encode('utf-8'))
 
-# build function to send change chat room question on call
 def change_room(newRoom):
     room = newRoom
     client.send((f'#### room: ({room})').encode('utf-8'))

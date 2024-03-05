@@ -8,10 +8,8 @@ server.bind((host, port))
 server.listen()
 nSwitches = 4
 clients = []
-aliases = []
 for i in range(0, 2**nSwitches):
     clients.append([])
-    aliases.append([])
 
 class ClientInfo:
     def __init__(self, alias, client, room):
@@ -37,36 +35,34 @@ def broadcast(message, room):
     for client in clients[room]:
         client.send(message)
 
-def handle_client(client, room):
+def handle_client(clientObj):
     while True:
-        room = ClientInfo.room
+        room = clientObj.room
         try:
-            message = client.recv(1024)
-            change, new_room = parse_room_switch(message)
+            message = clientObj.client.recv(1024)
+            change, newRoom = parse_room_switch(message)
             if(change):
-                ClientInfo.change_room(new_room)
-                disconnect(ClientInfo.client, room, ClientInfo.room)
+                disconnect(clientObj.client, newRoom)
             else:
-                message = f'{ClientInfo.alias}: {message}'
+                message = f'{clientObj.alias}: {message}'
                 broadcast(message, room)
             # add function to move rooms, remove from current room and place in a different one
         except:
-            disconnect(client, room, "NULL")
+            disconnect(clientObj, "NULL")
             break
 
-def disconnect(client, currentRoom, newRoom):
-    index = clients[currentRoom].index(client)
-    clients[currentRoom].remove(client)
-    alias = aliases[currentRoom][index]
+def disconnect(clientObj, newRoom):
+    currentRoom = clientObj.room
+    clients[currentRoom].remove(clientObj.client)
+    alias = clientObj.alias
     broadcast(f'{alias} has left the chat room!'.encode('utf-8'))
-    aliases[currentRoom].remove(alias)
     
     if(newRoom!="NULL"):
-        aliases[newRoom].append(ClientInfo.alias)
-        clients[newRoom].append(ClientInfo.client)
+        clientObj.change_room(newRoom)
+        clients[newRoom].append(clientObj.client)
         broadcast(f'{alias} has joined chat room {newRoom}!'.encode('utf-8'))
     else:
-        client.close()
+        clientObj.client.close()
 
 def receive():
     while True:
@@ -77,12 +73,12 @@ def receive():
         alias = client.recv(1024)
         client.send('room?'.encode('utf-8'))
         room = int(client.recv(1024))
-        aliases[room].append(alias)
-        clients[room].append(client)
+        clientObj = ClientInfo(alias, client, room)
+        clients[room].append(clientObj)
         print(f'The alias of this client is {alias}'.encode('utf-8'))
         broadcast(f'{alias} has connected to chat room {room}'.encode('utf-8'), room)
         client.send('you are now connected!'.encode('utf-8'))
-        thread = threading.Thread(target=handle_client, args=(client,room,))
+        thread = threading.Thread(target=handle_client, args=(clientObj,))
         thread.start()
 
 
