@@ -29,7 +29,7 @@ def build_message():
 
 def client_send():
     while True:
-        message = f'{alias}: {currentMessage}'
+        message = f'{currentMessage}'
         client.send(message.encode('utf-8'))
 
 # build function to send change chat room question on call
