@@ -88,7 +88,7 @@ void print_flags(int S, int M, int L, int E)
 }
 
 int main() {
-
+    printf("#####\n");
     alt_32 x_read;
     alt_32 y_read;
 	int switch_datain;
@@ -114,7 +114,6 @@ int main() {
 
     int send_switch_intial = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
     send_switch_intial &= (0b1000000000);
-    printf("#####\n");
     while (1) {
     	switch_datain = ~IORD_ALTERA_AVALON_PIO_DATA(BUTTON_BASE);
 

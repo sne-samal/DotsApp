@@ -33,7 +33,7 @@ def send_on_jtag():
     )
 
     # Send command to subprocess
-    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
+    process.stdin.write(f"nios2-terminal.exe --cable 2\n")
     #print("Command sent\n")
     process.stdin.flush()  # Flush the input buffer
 
