@@ -29,6 +29,9 @@ print(f"Connected to the server at {SERVER_HOST}:{SERVER_PORT}")
 currentMessage = ""
 room = 0
 
+def print_curr_msg(text):
+    print(f'\r{text} (Toggle SW9 to send!)', end='')
+
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
     if match:
@@ -75,28 +78,28 @@ def ParseNios2(str):
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
         currentMessage += '.'
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (str == 'Dash'):
         currentMessage += '-'
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (perhaps_room > -1):
         change_room(perhaps_room)
     elif (str == 'MORSE_BACKSPACE'):
         if (len(currentMessage) > 0):
             if (currentMessage[-1] == '.' or '-'):
                 currentMessage = currentMessage[:-1]
-                print(currentMessage)
+                print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_WORD_SPACE'):
         currentMessage += ' '
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_CHARACTER_BACKSPACE'): 
         if (len(currentMessage) > 0):
             if (currentMessage[-1].isalpha()):
                 currentMessage = currentMessage[:-1]
-                print(currentMessage)
+                print_curr_msg(currentMessage)
     elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
             currentMessage  = morse_to_text(currentMessage)
-            print(currentMessage)
+            print_curr_msg(currentMessage)
     elif (str == 'Send'):
         send = True
     else: 
