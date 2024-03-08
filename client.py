@@ -49,7 +49,7 @@ def morse_to_text(input_str):
     }
     
     for i in range(len(input_str) - 1, -1, -1):
-        if input_str[i].isalpha():
+        if (input_str[i].isalpha() or input_str[i] == ' '):
             plaintext_part = input_str[:i+1]
             morse_part = input_str[i+1:]
             break
