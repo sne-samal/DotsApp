@@ -11,7 +11,7 @@ SERVER_HOST = '18.133.73.205'  # The server's hostname or IP address
 SERVER_PORT = 1492 
 
 # Nios 2 stuff
-NIOS_CMD_SHELL_BAT = "your_nios_cmd_shell_bat_command_here"
+NIOS_CMD_SHELL_BAT = "C:/intelFPGA_lite/18.1/nios2eds/Nios II Command Shell.bat"
 send = False
 
 # Initialize socket
@@ -65,10 +65,13 @@ def morse_to_text(input_str):
     return plaintext_part + morse_character
 
 def change_room(newRoom):
+    global room
     room = newRoom
     client_socket.send(f'/join {room}')
 
 def ParseNios2(str):
+    global currentMessage
+    global send
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
         currentMessage += '.'
