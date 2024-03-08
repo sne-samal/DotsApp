@@ -67,7 +67,7 @@ def morse_to_text(input_str):
 def change_room(newRoom):
     global room
     room = newRoom
-    client_socket.send(f'/join {room}')
+    client_socket.send(f'/join {room}'.encode('utf-8'))
 
 def ParseNios2(str):
     global currentMessage
