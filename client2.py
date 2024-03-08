@@ -1,33 +1,20 @@
-import socket
 import threading
-import sys
+import socket
 import subprocess
 import re
 
-# Server's IP address
-# If the server is not on this machine,
-# put the private (network) or public (internet) IP address
-SERVER_HOST = '18.133.73.205'  # The server's hostname or IP address
-SERVER_PORT = 1492 
 
-# Nios 2 stuff
 NIOS_CMD_SHELL_BAT = "your_nios_cmd_shell_bat_command_here"
-send = False
 
-# Initialize socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Connect to the server
-try:
-    client_socket.connect((SERVER_HOST, SERVER_PORT))
-except ConnectionRefusedError:
-    print("Failed to connect to the server")
-    sys.exit()
-
-print(f"Connected to the server at {SERVER_HOST}:{SERVER_PORT}")
+# add a text box somewhere to initialise the username 
+alias = input('Choose an alias >>> ')
+# need to figure out how room initialisation works 
+room = 0
+# probably query the FPGA on initialisation for the value 
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('', ))
 
 currentMessage = ""
-room = 0
 
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
@@ -36,6 +23,21 @@ def parse_room_number(text):
     else:
         return -1  # Return -1 if there's no match
 
+
+def client_receive():
+    while True:
+        try:
+            message = client.recv(1024).decode('utf-8')
+            if message == "alias?":
+                client.send(alias.encode('utf-8'))
+            elif message == "room?":
+                client.send(str(room).encode('utf-8'))
+            else:
+                print(message)
+        except:
+            print('Error!')
+            client.close()
+            break
 
 def morse_to_text(input_str):
     # Morse code mapping for single characters
@@ -64,10 +66,6 @@ def morse_to_text(input_str):
     # Concatenate and return the result
     return plaintext_part + morse_character
 
-def change_room(newRoom):
-    room = newRoom
-    client_socket.send(f'/join {room}')
-
 def ParseNios2(str):
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
@@ -89,27 +87,14 @@ def ParseNios2(str):
     elif (str == 'CONFIRM_ENGLISH_LETTER'):
             currentMessage  = morse_to_text(currentMessage)
     elif (str == 'Send'):
-        send = True
+        #hhhhh
     else: 
-        pass
+        # error case
+    
 
 
-def receive_messages():
-    while True:
-        try:
-            message = client_socket.recv(1024).decode('utf-8')
-            print(message)
-        except Exception as e:
-            # Any error in receiving data implies the connection is closed
-            print("Disconnected from the server.")
-            client_socket.close()
-            break
-
-# Thread for receiving messages
-receive_thread = threading.Thread(target=receive_messages)
-receive_thread.start()
-
-try:
+def build_message():
+     # Send command to subprocess
     process = subprocess.Popen(
         NIOS_CMD_SHELL_BAT,
         bufsize=0,
@@ -128,14 +113,23 @@ try:
             ParseNios2(line.strip())  # Print the line (remove trailing newline)
         if "nios2-terminal: exiting due to ^D on remote" in line:
             break
-        if send:
-            client_socket.send(currentMessage.encode('utf-8'))
-            send = False
-            currentMessage = ''
-except KeyboardInterrupt:
-    # Handle abrupt client closure
-    print("\nExiting gracefully...")
-finally:
-    # Close socket on any exit
-    client_socket.close()
 
+
+def client_send():
+    while True:
+        message = f'{currentMessage}'
+        client.send(message.encode('utf-8'))
+
+def change_room(newRoom):
+    room = newRoom
+    client.send((f'#### room: ({room})').encode('utf-8'))
+
+
+receive_thread = threading.Thread(target=client_receive)
+receive_thread.start()
+
+send_thread = threading.Thread(target=client_send)
+send_thread.start()
+
+display_thread = threading.Thread(target=build_message)
+display_thread.start()
