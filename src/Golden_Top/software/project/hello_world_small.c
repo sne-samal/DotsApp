@@ -88,7 +88,7 @@ void print_flags(int S, int M, int L, int E)
 }
 
 int main() {
-
+    printf("#####\n");
     alt_32 x_read;
     alt_32 y_read;
 	int switch_datain;
@@ -114,7 +114,6 @@ int main() {
 
     int send_switch_intial = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
     send_switch_intial &= (0b1000000000);
-
     while (1) {
     	switch_datain = ~IORD_ALTERA_AVALON_PIO_DATA(BUTTON_BASE);
 
@@ -165,7 +164,8 @@ int main() {
         		setFlag = 1;
         		justSetFlag = 1;
         		// send data to jtag uart
-        		print_flags(S, M, L, E);
+        		//print_flags(S, M, L, E);
+        		printf("CONFIRM_ENGLISH_CHARACTER\n");
         		// send flag data
         		alt_u32 val = 0x92;
         		IOWR_ALTERA_AVALON_PIO_DATA(0x00021060 ,val); //TODO: Fix this
@@ -177,7 +177,8 @@ int main() {
         		M = 1;
         		setFlag = 1;
         		justSetFlag = 1;
-        		print_flags(S, M, L, E); // sending data
+        		//print_flags(S, M, L, E); // sending data
+        		printf("MORSE_BACKSPACE\n");
         		alt_u32 val = 0x00;
         		IOWR_ALTERA_AVALON_PIO_DATA(0x00021060 ,val); // printing "B"
 
@@ -188,7 +189,8 @@ int main() {
         		L = 1;
         		setFlag = 1;
         		justSetFlag = 1;
-        		print_flags(S, M, L, E); // sending data
+        		//print_flags(S, M, L, E); // sending data
+        		printf("ENGLISH_CHARACTER_BACKSPACE\n");
         		alt_u32 val = 0b1000111;
         		IOWR_ALTERA_AVALON_PIO_DATA(0x00021060 ,val);
 
@@ -199,7 +201,8 @@ int main() {
         		E = 1;
         		setFlag = 1;
         		justSetFlag = 1;
-        		print_flags(S, M, L, E); // sending data
+        		//print_flags(S, M, L, E); // sending data
+        		printf("ENGLISH_WORD_SPACE\n");
         		alt_u32 val = 0x86;
         		IOWR_ALTERA_AVALON_PIO_DATA(0x00021060 ,val);
         	}
