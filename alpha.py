@@ -1,1 +1,1 @@
-print('-'.isalpha())
+print(' '.isalpha())
