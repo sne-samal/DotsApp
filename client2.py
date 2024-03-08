@@ -11,7 +11,7 @@ SERVER_HOST = '18.133.73.205'  # The server's hostname or IP address
 SERVER_PORT = 1492 
 
 # Nios 2 stuff
-NIOS_CMD_SHELL_BAT = "your_nios_cmd_shell_bat_command_here"
+NIOS_CMD_SHELL_BAT = "C:/intelFPGA_lite/18.1/nios2eds/Nios II Command Shell.bat"
 send = False
 
 # Initialize socket
@@ -28,6 +28,9 @@ print(f"Connected to the server at {SERVER_HOST}:{SERVER_PORT}")
 
 currentMessage = ""
 room = 0
+
+def print_curr_msg(text):
+    print(f'\r{text}', end='(Toggle SW9 to send!)')
 
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
@@ -49,7 +52,7 @@ def morse_to_text(input_str):
     }
     
     for i in range(len(input_str) - 1, -1, -1):
-        if input_str[i].isalpha():
+        if (input_str[i].isalpha() or input_str[i] == ' '):
             plaintext_part = input_str[:i+1]
             morse_part = input_str[i+1:]
             break
@@ -75,28 +78,28 @@ def ParseNios2(str):
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
         currentMessage += '.'
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (str == 'Dash'):
         currentMessage += '-'
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (perhaps_room > -1):
         change_room(perhaps_room)
     elif (str == 'MORSE_BACKSPACE'):
         if (len(currentMessage) > 0):
             if (currentMessage[-1] == '.' or '-'):
                 currentMessage = currentMessage[:-1]
-                print(currentMessage)
+                print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_WORD_SPACE'):
         currentMessage += ' '
-        print(currentMessage)
+        print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_CHARACTER_BACKSPACE'): 
         if (len(currentMessage) > 0):
             if (currentMessage[-1].isalpha()):
                 currentMessage = currentMessage[:-1]
-                print(currentMessage)
-    elif (str == 'CONFIRM_ENGLISH_LETTER'):
+                print_curr_msg(currentMessage)
+    elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
             currentMessage  = morse_to_text(currentMessage)
-            print(currentMessage)
+            print_curr_msg(currentMessage)
     elif (str == 'Send'):
         send = True
     else: 
@@ -119,19 +122,18 @@ receive_thread = threading.Thread(target=receive_messages)
 receive_thread.start()
 
 try:
-    # process = subprocess.Popen(
-    #   NIOS_CMD_SHELL_BAT,
-    #   bufsize=0,
-    #   stdin=subprocess.PIPE,
-    #   stdout=subprocess.PIPE,
-    #   universal_newlines=True)
+    process = subprocess.Popen(
+        NIOS_CMD_SHELL_BAT,
+        bufsize=0,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        universal_newlines=True)
     
-    # process.stdin.write(f"nios2-terminal.exe --cable 1\n")
-    # process.stdin.flush()  # Flush the input buffer
+    process.stdin.write(f"nios2-terminal.exe --cable 2\n")
+    process.stdin.flush()  # Flush the input buffer
 
     while True:
-        #line = process.stdout.readline()
-        line = input()
+        line = process.stdout.readline()
         if not line:  # End of file reached
             break
         else:
@@ -140,6 +142,7 @@ try:
             break
         if send:
             client_socket.send(currentMessage.encode('utf-8'))
+            print("sent.")
             send = False
             currentMessage = ''
 except KeyboardInterrupt:
@@ -148,4 +151,3 @@ except KeyboardInterrupt:
 finally:
     # Close socket on any exit
     client_socket.close()
-
