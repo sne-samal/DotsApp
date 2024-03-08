@@ -25,13 +25,38 @@ except ConnectionRefusedError:
     sys.exit()
 
 print(f"Connected to the server at {SERVER_HOST}:{SERVER_PORT}")
+print(r"""#######################################################
+#                                                     #
+#                                                     #
+#      ____        _            _                     #
+#     |  _ \  ___ | |_ ___     / \   _ __  _ __       #
+#     | | | |/ _ \| __/ __|   / _ \ | '_ \| '_ \      #
+#     | |_| | (_) | |_\__ \  / ___ \| |_) | |_) |     #
+#     |____/ \___/ \__|___/ /_/   \_\ .__/| .__/      #
+#                                   |_|   |_|         #
+#                                                     #
+#                                                     #
+#######################################################
+#######################################################
+#                                                     #
+#     CLIENT: 1                                       #
+#                                                     #
+#     USE:                                            #
+#     Left Tilt:            Morse Backspace           #
+#     Right Tilt:           Send English Letter       #
+#     Forward Tilt:         English Letter Space      #
+#     Bakward Tilt:         English Letter Space      #
+#                                                     #
+#######################################################
+      """)
+
 
 currentMessage = ""
 room = 0
 
 def print_curr_msg(text):
-    print(f'\r\033[34m{text}\033[0m', end='(Toggle SW9 to send!)')
-    print("\033[34mHello, World!\033[0m")
+    print(f'{text}', end='(Toggle SW9 to send!)')
+    #print("Hello, World!")
 
 
 def parse_room_number(text):

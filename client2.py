@@ -25,12 +25,39 @@ except ConnectionRefusedError:
     sys.exit()
 
 print(f"Connected to the server at {SERVER_HOST}:{SERVER_PORT}")
+print(r"""#######################################################
+#                                                     #
+#                                                     #
+#      ____        _            _                     #
+#     |  _ \  ___ | |_ ___     / \   _ __  _ __       #
+#     | | | |/ _ \| __/ __|   / _ \ | '_ \| '_ \      #
+#     | |_| | (_) | |_\__ \  / ___ \| |_) | |_) |     #
+#     |____/ \___/ \__|___/ /_/   \_\ .__/| .__/      #
+#                                   |_|   |_|         #
+#                                                     #
+#                                                     #
+#######################################################
+#######################################################
+#                                                     #
+#     CLIENT: 2                                       #
+#                                                     #
+#     USE:                                            #
+#     Left Tilt:            Morse Backspace           #
+#     Right Tilt:           Send English Letter       #
+#     Forward Tilt:         English Letter Space      #
+#     Bakward Tilt:         English Letter Space      #
+#                                                     #
+#######################################################
+      """)
+
 
 currentMessage = ""
 room = 0
 
 def print_curr_msg(text):
-    print(f'\r{text}', end='(Toggle SW9 to send!)')
+    print(f'{text}', end='(Toggle SW9 to send!)')
+    #print("Hello, World!")
+
 
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
@@ -129,7 +156,7 @@ try:
         stdout=subprocess.PIPE,
         universal_newlines=True)
     
-    process.stdin.write(f"nios2-terminal.exe --cable 2\n")
+    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
     process.stdin.flush()  # Flush the input buffer
 
     while True:
