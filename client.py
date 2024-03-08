@@ -117,7 +117,7 @@ try:
         stdout=subprocess.PIPE,
         universal_newlines=True)
     
-    process.stdin.write(f"nios2-terminal\n")
+    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
     process.stdin.flush()  # Flush the input buffer
 
     while True:
