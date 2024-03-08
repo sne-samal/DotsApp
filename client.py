@@ -65,29 +65,38 @@ def morse_to_text(input_str):
     return plaintext_part + morse_character
 
 def change_room(newRoom):
+    global room
     room = newRoom
-    client_socket.send(f'/join {room}')
+    client_socket.send(f'/join {room}'.encode('utf-8'))
 
 def ParseNios2(str):
+    global currentMessage
+    global send
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
         currentMessage += '.'
+        print(currentMessage)
     elif (str == 'Dash'):
         currentMessage += '-'
+        print(currentMessage)
     elif (perhaps_room > -1):
         change_room(perhaps_room)
     elif (str == 'MORSE_BACKSPACE'):
         if (len(currentMessage) > 0):
             if (currentMessage[-1] == '.' or '-'):
                 currentMessage = currentMessage[:-1]
+                print(currentMessage)
     elif (str == 'ENGLISH_WORD_SPACE'):
         currentMessage += ' '
+        print(currentMessage)
     elif (str == 'ENGLISH_CHARACTER_BACKSPACE'): 
         if (len(currentMessage) > 0):
             if (currentMessage[-1].isalpha()):
                 currentMessage = currentMessage[:-1]
+                print(currentMessage)
     elif (str == 'CONFIRM_ENGLISH_LETTER'):
             currentMessage  = morse_to_text(currentMessage)
+            print(currentMessage)
     elif (str == 'Send'):
         send = True
     else: 
@@ -110,18 +119,19 @@ receive_thread = threading.Thread(target=receive_messages)
 receive_thread.start()
 
 try:
-    process = subprocess.Popen(
-        NIOS_CMD_SHELL_BAT,
-        bufsize=0,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        universal_newlines=True)
+    # process = subprocess.Popen(
+    #   NIOS_CMD_SHELL_BAT,
+    #   bufsize=0,
+    #   stdin=subprocess.PIPE,
+    #   stdout=subprocess.PIPE,
+    #   universal_newlines=True)
     
-    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
-    process.stdin.flush()  # Flush the input buffer
+    # process.stdin.write(f"nios2-terminal.exe --cable 1\n")
+    # process.stdin.flush()  # Flush the input buffer
 
     while True:
-        line = process.stdout.readline()
+        #line = process.stdout.readline()
+        line = input()
         if not line:  # End of file reached
             break
         else:
