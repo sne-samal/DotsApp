@@ -30,7 +30,9 @@ currentMessage = ""
 room = 0
 
 def print_curr_msg(text):
-    print(f'\r{text}', end='(Toggle SW9 to send!)')
+    print(f'\r\033[34m{text}\033[0m', end='(Toggle SW9 to send!)')
+    print("\033[34mHello, World!\033[0m")
+
 
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
