@@ -94,7 +94,7 @@ def ParseNios2(str):
             if (currentMessage[-1].isalpha()):
                 currentMessage = currentMessage[:-1]
                 print(currentMessage)
-    elif (str == 'CONFIRM_ENGLISH_LETTER'):
+    elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
             currentMessage  = morse_to_text(currentMessage)
             print(currentMessage)
     elif (str == 'Send'):
