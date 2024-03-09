@@ -3,6 +3,18 @@ import threading
 import sys
 import subprocess
 import re
+import tkinter as tk
+from gui import ChatRoom
+
+# separate gui thread
+def start_gui():
+    root = tk.Tk()
+    global chat_room
+    chat_room = ChatRoom(root)
+    root.mainloop()
+
+gui_thread = threading.Thread(target=start_gui)
+gui_thread.start()
 
 # Server's IP address
 # If the server is not on this machine,
@@ -54,15 +66,20 @@ print(r"""#######################################################
 currentMessage = ""
 room = 0
 
+# updates input label
 def print_curr_msg(text):
-    print(f'{text}', end='(Toggle SW9 to send!)')
-    #print("Hello, World!")
-
+    message_to_display = f'{text}(Toggle SW9 to send!)'
+    #if chat_room:  # check for chatroom
+    chat_room.input_label.config(text=message_to_display) 
+    #else:
+        #print(message_to_display) 
 
 def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
     if match:
-        return int(match.group(1))  # Convert the matched number to an integer
+        new_room = int(match.group(1))  # Convert the matched number to an integer
+        change_room(new_room)
+        return new_room
     else:
         return -1  # Return -1 if there's no match
 
@@ -98,6 +115,8 @@ def change_room(newRoom):
     global room
     room = newRoom
     client_socket.send(f'/join {room}'.encode('utf-8'))
+    #if chat_room: # updates room display
+    chat_room.setRoom(room)
 
 def ParseNios2(str):
     global currentMessage
@@ -127,17 +146,20 @@ def ParseNios2(str):
     elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
             currentMessage  = morse_to_text(currentMessage)
             print_curr_msg(currentMessage)
-    elif (str == 'Send'):
+    elif (str == 'Send'): #updates chat log
         send = True
+        #if chat_room:  # check for chat room then .after used to update chat log
+        chat_room.chat_log.after(0, lambda: chat_room.sendMessage(currentMessage))
     else: 
         pass
 
-
+# updates chat log
 def receive_messages():
     while True:
         try:
             message = client_socket.recv(1024).decode('utf-8')
-            print(message)
+            #if chat_room:  # check for chat room
+            chat_room.chat_log.after(0, lambda m=message: chat_room.sendMessage(m))
         except Exception as e:
             # Any error in receiving data implies the connection is closed
             print("Disconnected from the server.")
