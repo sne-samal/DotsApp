@@ -50,7 +50,8 @@ class Client:
             try:
                 message = self.socket.recv(4096)
                 if message.startswith(b"/ecdh_key"):
-                    self.verify_ecdh(message)
+                    partner_pgp_key_ascii = input("Please paste the partner's PGP public key:\n")
+                    self.verify_ecdh(message, partner_pgp_key_ascii)
                     self.generate_shared_key()
                     self.socket.send("/secure".encode('utf-8'))
                 elif message.startswith(b"/serverBroadcast"):
@@ -121,14 +122,12 @@ class Client:
         signature_b64 = base64.b64encode(signature).decode('utf-8')
         self.socket.send(f"/ecdh_key {public_key_b64} {signature_b64}".encode('utf-8'))
 
-    def verify_ecdh(self, incoming_message):
+    def verify_ecdh(self, incoming_message, partner_pgp_key_ascii):
         try:
             _, partner_public_key_b64, signature_b64 = incoming_message.split(b' ', 2)
             partner_public_key_bytes = base64.b64decode(partner_public_key_b64)
             signature_bytes = base64.b64decode(signature_b64)
 
-            with open("partner_openpgp_public_key.asc", 'r') as f:
-                partner_pgp_key_ascii = f.read()
             partner_pgp_key = PGPKey()
             partner_pgp_key.parse(partner_pgp_key_ascii)
 
