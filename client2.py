@@ -49,26 +49,33 @@ class Client:
         while True:
             try:
                 message = self.socket.recv(4096)
-                if message.startswith(b"/ecdh_key"):
-                    partner_pgp_key_ascii = input("Please paste the partner's PGP public key:\n")
-                    self.verify_ecdh(message, partner_pgp_key_ascii)
-                    self.generate_shared_key()
-                    self.socket.send("/secure".encode('utf-8'))
-                elif message.startswith(b"/serverBroadcast"):
-                    print(message.decode('utf-8'))
-                elif message.startswith(b"/serverReady"):
-                    print("Server is now ready for DH key exchange")
-                    self.server_DHReady = True
-                    self.send_ecdh_key_and_signature()
-                else:
-                    if self.shared_key:
-                        plaintext = self.receive_encrypted_message(message)
-                        if plaintext:
-                            print(f"Decrypted message: {plaintext}")
+                self.handle_incoming_message(message)
             except Exception as e:
                 print(f"Error: {e}")
                 self.socket.close()
                 break
+
+    def handle_incoming_message(self, message):
+        if message.startswith(b"/ecdh_key"):
+            threading.Thread(target=self.verify_ecdh_thread, args=(message,)).start()
+        elif message.startswith(b"/serverBroadcast"):
+            print(message.decode('utf-8'))
+        elif message.startswith(b"/serverReady"):
+            print("Server is now ready for DH key exchange")
+            self.server_DHReady = True
+            self.send_ecdh_key_and_signature()
+        else:
+            if self.shared_key:
+                plaintext = self.receive_encrypted_message(message)
+                if plaintext:
+                    print(f"Decrypted message: {plaintext}")
+
+
+    def verify_ecdh_thread(self, message):
+        partner_pgp_key_ascii = input("Please paste the partner's PGP public key:\n")
+        if self.verify_ecdh(message, partner_pgp_key_ascii):
+            self.generate_shared_key()
+            self.socket.send("/secure".encode('utf-8'))
 
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
@@ -81,9 +88,11 @@ class Client:
                 try:
                     self.socket.send(message.encode('utf-8'))
                     # Wait for the server's response without blocking
+                    retries = 0
+                    max_retries = 5
                     while not self.server_DHReady:
                         try:
-                            self.socket.settimeout(1)  # Set a timeout for the socket
+                            self.socket.settimeout(5)  # Set a timeout of 5 seconds
                             response = self.socket.recv(1024).decode('utf-8')
                             if response:
                                 if response.startswith("UserID"):
@@ -92,11 +101,17 @@ class Client:
                                 elif response.startswith("/serverReady"):
                                     self.server_DHReady = True
                         except socket.timeout:
-                            pass  # No response received within the timeout
+                            retries += 1
+                            if retries >= max_retries:
+                                print("Error: Timeout waiting for server response. Retrying...")
+                                self.socket.send(message.encode('utf-8'))  # Resend the join message
+                                retries = 0
                         except OSError as e:
                             print(f"Error: {e}")
                             print("Connection closed by the server.")
                             raise  # Re-raise the exception to be caught by the outer try-except block
+                    else:
+                        self.send_ecdh_key_and_signature()
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
