@@ -149,7 +149,8 @@ def ParseNios2(str):
     elif (str == 'Send'): #updates chat log
         send = True
         #if chat_room:  # check for chat room then .after used to update chat log
-        chat_room.chat_log.after(0, lambda: chat_room.sendMessage(currentMessage))
+        #chat_room.chat_log.after(0, lambda: chat_room.sendMessage(currentMessage))
+        
     else: 
         pass
 
@@ -164,8 +165,9 @@ def receive_messages():
             # Any error in receiving data implies the connection is closed
             print("Disconnected from the server.")
             client_socket.close()
-            exit()
-            break
+            # exit()
+            # break
+            return 
 
 # Thread for receiving messages
 receive_thread = threading.Thread(target=receive_messages)
@@ -189,8 +191,9 @@ try:
         else:
             ParseNios2(line.strip())  # Print the line (remove trailing newline)
         if "nios2-terminal: exiting due to ^D on remote" in line:
-            # break
-            quit
+            exit 
+            # quit
+            
         if send:
             client_socket.send(currentMessage.encode('utf-8'))
             print("sent.")
@@ -199,7 +202,9 @@ try:
 except KeyboardInterrupt:
     # Handle abrupt client closure
     print("\nExiting gracefully...")
+    #quit
 finally:
     # Close socket on any exit
     client_socket.close()
+    exit
 
