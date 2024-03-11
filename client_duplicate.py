@@ -78,7 +78,7 @@ def parse_room_number(text):
     match = re.search(r"New room number: (\d+)", text)
     if match:
         new_room = int(match.group(1))  # Convert the matched number to an integer
-        change_room(new_room)
+        #change_room(new_room)
         return new_room
     else:
         return -1  # Return -1 if there's no match
