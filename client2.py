@@ -67,7 +67,7 @@ class Client:
                 print(f"Error: {e}")
                 self.socket.close()
                 break
-
+            
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
@@ -82,14 +82,19 @@ class Client:
                     while not self.server_DHReady:
                         try:
                             self.socket.settimeout(1)  # Set a timeout for the socket
-                            response = recv_response(self.socket)
-                            if response.startswith("UserID"):
-                                print(response)
-                                break
-                            elif response.startswith("/serverReady"):
-                                self.server_DHReady = True
+                            response = self.socket.recv(1024).decode('utf-8')
+                            if response:
+                                if response.startswith("UserID"):
+                                    print(response)
+                                    break
+                                elif response.startswith("/serverReady"):
+                                    self.server_DHReady = True
                         except socket.timeout:
                             pass  # No response received within the timeout
+                        except OSError as e:
+                            print(f"Error: {e}")
+                            print("Connection closed by the server.")
+                            raise  # Re-raise the exception to be caught by the outer try-except block
                     else:
                         self.send_ecdh_key_and_signature()
                 except OSError as e:
@@ -107,16 +112,7 @@ class Client:
                         print("Connection closed by the server.")
                         break  # Exit the loop if the connection is closed
 
-def recv_response(sock):
-    while True:
-        try:
-            response = sock.recv(1024).decode('utf-8')
-            if response:
-                return response
-        except OSError as e:
-            print(f"Error: {e}")
-            print("Connection closed by the server.")
-            raise  # Re-raise the exception to be caught by the outer try-except block
+
 
     def send_ecdh_key_and_signature(self):
         public_key_bytes = self.ecdh_public_key.public_bytes(
