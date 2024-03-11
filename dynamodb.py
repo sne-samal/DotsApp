@@ -1,7 +1,7 @@
 import boto3
 
 # Create a DynamoDB client using Boto3
-dynamodb = boto3.resource('dynamodb')
+dynamodb = boto3.resource('dynamodb', region_name='eu-north-1')
 
 # Define table name
 table_name = 'ChatMessages'

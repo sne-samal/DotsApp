@@ -20,7 +20,7 @@ chatrooms = {str(i): [] for i in range(4)}  # Initializes chatrooms "0", "1", "2
 
 def save_message(chatroom_id, timestamp, message, alias):
     # Create a DynamoDB resource
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource('dynamodb', region_name='eu-north-1')
 
     # Specify the table name
     table_name = 'ChatMessages'
@@ -43,7 +43,7 @@ def save_message(chatroom_id, timestamp, message, alias):
     
 def query_and_broadcast_saved_chats(client_socket, chatroom_id):
     # Create a DynamoDB resource
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource('dynamodb', region_name='eu-north-1')
 
     # Specify the table name
     table_name = 'ChatMessages'
