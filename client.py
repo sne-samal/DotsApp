@@ -116,7 +116,7 @@ def change_room(newRoom):
     room = newRoom
     client_socket.send(f'/join {room}'.encode('utf-8'))
     #if chat_room: # updates room display
-    chat_room.setRoom(room)
+    #chat_room.setRoom(room)
     chat_room.clearLogs()
 
 def ParseNios2(str):
