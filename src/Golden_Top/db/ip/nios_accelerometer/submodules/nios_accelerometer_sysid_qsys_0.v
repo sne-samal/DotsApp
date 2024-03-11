@@ -49,7 +49,7 @@ module nios_accelerometer_sysid_qsys_0 (
 
   wire    [ 31: 0] readdata;
   //control_slave, which is an e_avalon_slave
-  assign readdata = address ? 1709651068 : 0;
+  assign readdata = address ? 1709981534 : 0;
 
 endmodule
 

@@ -43,10 +43,10 @@ class ChatRoom:
 
 
 
-root = tk.Tk()
-chat_room = ChatRoom(root)
-chat_room.setText("Input message")
-chat_room.sendMessage("Hello, world!\n" * 20)
-print("Got message: "+chat_room.getText())
-root.mainloop()
+# root = tk.Tk()
+# chat_room = ChatRoom(root)
+# chat_room.setText("Input message")
+# chat_room.sendMessage("Hello, world!\n" * 20)
+# print("Got message: "+chat_room.getText())
+# root.mainloop()
 

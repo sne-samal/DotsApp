@@ -68,7 +68,7 @@ room = 0
 
 # updates input label
 def print_curr_msg(text):
-    message_to_display = f'{text}(Toggle SW9 to send!)'
+    message_to_display = f'{text}\n(Toggle SW9 to send!)'
     #if chat_room:  # check for chatroom
     chat_room.input_label.config(text=message_to_display) 
     #else:
@@ -164,6 +164,7 @@ def receive_messages():
             # Any error in receiving data implies the connection is closed
             print("Disconnected from the server.")
             client_socket.close()
+            exit()
             break
 
 # Thread for receiving messages
@@ -178,7 +179,7 @@ try:
         stdout=subprocess.PIPE,
         universal_newlines=True)
     
-    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
+    process.stdin.write(f"nios2-terminal.exe\n")
     process.stdin.flush()  # Flush the input buffer
 
     while True:
@@ -188,7 +189,8 @@ try:
         else:
             ParseNios2(line.strip())  # Print the line (remove trailing newline)
         if "nios2-terminal: exiting due to ^D on remote" in line:
-            break
+            # break
+            quit
         if send:
             client_socket.send(currentMessage.encode('utf-8'))
             print("sent.")
