@@ -19,7 +19,6 @@ class Client:
         self.partner_ecdh_public_key = None
         self.shared_key = None
         self.server_DHReady = False
-        self.partner_pgp_key_bytes = None
         try:
             self.socket.connect((self.host, self.port))
         except Exception as e:
@@ -51,7 +50,6 @@ class Client:
             try:
                 message = self.socket.recv(4096)
                 if message.startswith(b"/ecdh_key"):
-                    self.partner_pgp_key_bytes = input("Input intended recipient's PGP public key: ")
                     self.verify_ecdh(message)
                     self.generate_shared_key()
                     self.socket.send("/secure".encode('utf-8'))
@@ -60,6 +58,7 @@ class Client:
                 elif message.startswith(b"/serverReady"):
                     print("Server is now ready for DH key exchange")
                     self.server_DHReady = True
+                    self.send_ecdh_key_and_signature()
                 else:
                     if self.shared_key:
                         plaintext = self.receive_encrypted_message(message)
@@ -97,8 +96,6 @@ class Client:
                             print(f"Error: {e}")
                             print("Connection closed by the server.")
                             raise  # Re-raise the exception to be caught by the outer try-except block
-                    else:
-                        self.send_ecdh_key_and_signature()
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
@@ -113,8 +110,6 @@ class Client:
                         print(f"Error: {e}")
                         print("Connection closed by the server.")
                         break  # Exit the loop if the connection is closed
-
-
 
     def send_ecdh_key_and_signature(self):
         public_key_bytes = self.ecdh_public_key.public_bytes(
@@ -132,8 +127,10 @@ class Client:
             partner_public_key_bytes = base64.b64decode(partner_public_key_b64)
             signature_bytes = base64.b64decode(signature_b64)
 
+            with open("partner_openpgp_public_key.asc", 'r') as f:
+                partner_pgp_key_ascii = f.read()
             partner_pgp_key = PGPKey()
-            partner_pgp_key.parse(self.partner_pgp_key_bytes)
+            partner_pgp_key.parse(partner_pgp_key_ascii)
 
             message = PGPMessage.new(partner_public_key_bytes, file=True)
 
@@ -199,14 +196,14 @@ class Client:
         ciphertext, iv, tag = encrypted_message.split(b':')
         plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
         return plaintext.decode('utf-8')
-    
+
     def sign_data(self, data):
         with open(self.openpgp_key_path, 'r') as f:
             private_key, _ = PGPKey.from_blob(f.read())
         message = PGPMessage.new(data)
         signature = private_key.sign(message)
         return bytes(signature)
-    
+
 if __name__ == "__main__":
     HOST = '3.10.53.32'
     PORT = 1492
