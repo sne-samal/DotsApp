@@ -61,7 +61,7 @@ def query_and_broadcast_saved_chats(client_socket, chatroom_id):
             # Iterate over each message and send it to the newly joined user
             for item in response['Items']:
                 # Format the message as "[timestamp] alias: message"
-                formatted_message = f"[{item['timestamp']}] {item['alias']}: {item['message']}"
+                formatted_message = f"[{item['timestamp']}] {item['alias']}: {item['message']}\n"
                 client_socket.send(formatted_message.encode('utf-8'))
         else:
             # No messages found, notify the user
