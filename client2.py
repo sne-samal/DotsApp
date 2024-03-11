@@ -76,15 +76,47 @@ class Client:
                 self.server_DHReady = False
                 self.shared_key = None
                 self.partner_ecdh_public_key = None
-                self.socket.send(message.encode('utf-8'))
-                while not self.server_DHReady:
-                    pass
-                self.send_ecdh_key_and_signature()
+                try:
+                    self.socket.send(message.encode('utf-8'))
+                    # Wait for the server's response without blocking
+                    while not self.server_DHReady:
+                        try:
+                            self.socket.settimeout(1)  # Set a timeout for the socket
+                            response = recv_response(self.socket)
+                            if response.startswith("UserID"):
+                                print(response)
+                                break
+                            elif response.startswith("/serverReady"):
+                                self.server_DHReady = True
+                        except socket.timeout:
+                            pass  # No response received within the timeout
+                    else:
+                        self.send_ecdh_key_and_signature()
+                except OSError as e:
+                    print(f"Error: {e}")
+                    print("Connection closed by the server.")
+                    break  # Exit the loop if the connection is closed
             elif message.startswith("/") or (message and self.shared_key):
                 if self.shared_key:
                     self.send_encrypted_message(message)
                 else:
-                    self.socket.send(message.encode('utf-8'))
+                    try:
+                        self.socket.send(message.encode('utf-8'))
+                    except OSError as e:
+                        print(f"Error: {e}")
+                        print("Connection closed by the server.")
+                        break  # Exit the loop if the connection is closed
+
+def recv_response(sock):
+    while True:
+        try:
+            response = sock.recv(1024).decode('utf-8')
+            if response:
+                return response
+        except OSError as e:
+            print(f"Error: {e}")
+            print("Connection closed by the server.")
+            raise  # Re-raise the exception to be caught by the outer try-except block
 
     def send_ecdh_key_and_signature(self):
         public_key_bytes = self.ecdh_public_key.public_bytes(
@@ -177,7 +209,7 @@ class Client:
         return private_key.sign(message).data
 
 if __name__ == "__main__":
-    HOST = '18.133.73.205'
+    HOST = '3.10.53.32'
     PORT = 1492
     OPENPGP_KEY_PATH = "openpgp_key_pair.asc"
     client = Client(HOST, PORT, OPENPGP_KEY_PATH)
