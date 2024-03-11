@@ -1,86 +1,101 @@
-import threading
 import socket
-import re
-host = ''
-port = 12000
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((host, port))
-server.listen()
-nSwitches = 4
-clients = []
-for i in range(0, 2**nSwitches):
-    clients.append([])
+import select
+import random
+import string
+from datetime import datetime
 
-class ClientInfo:
-    def __init__(self, alias, client, room):
-        self.client = client
-        self.alias = alias
-        self.room = room
-    def change_room(self, new_room):
-        self.room = new_room
+HOST = '0.0.0.0'
+PORT = 1492
 
-def parse_room_switch(message):
-    # Regular expression to match the pattern "#### room: x" where x is an integer
-    match = re.match(r'^#### room: (\d+)$', message)
-    if match:
-        # If the pattern matches, extract the room number
-        room_number = int(match.group(1))
-        return True, room_number
-    else:
-        # If the pattern does not match, return False and -1
-        return False, -1
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server_socket.bind((HOST, PORT))
+server_socket.listen()
 
-def broadcast(message, room):
-    # in case check length of list (people in room)
-    for client in clients[room]:
-        client.send(message)
+sockets_list = [server_socket]
+clients = {}  # client_socket: {"alias": alias, "current_chatroom": "0"}
+chatrooms = {str(i): [] for i in range(4)}  # Initializes chatrooms "0", "1", "2", "3"
 
-def handle_client(clientObj):
-    while True:
-        room = clientObj.room
+def send_message_to_clients(message, chatroom_name):
+    for client_socket in chatrooms[chatroom_name]:
         try:
-            message = clientObj.client.recv(1024)
-            change, newRoom = parse_room_switch(message)
-            if(change):
-                disconnect(clientObj.client, newRoom)
-            else:
-                message = f'{clientObj.alias}: {message}'
-                broadcast(message, room)
-            # add function to move rooms, remove from current room and place in a different one
+            client_socket.send(message.encode('utf-8'))
         except:
-            disconnect(clientObj, "NULL")
-            break
+            remove_client(client_socket)
 
-def disconnect(clientObj, newRoom):
-    currentRoom = clientObj.room
-    clients[currentRoom].remove(clientObj.client)
-    alias = clientObj.alias
-    broadcast(f'{alias} has left the chat room!'.encode('utf-8'))
-    
-    if(newRoom!="NULL"):
-        clientObj.change_room(newRoom)
-        clients[newRoom].append(clientObj.client)
-        broadcast(f'{alias} has joined chat room {newRoom}!'.encode('utf-8'))
+def broadcast(message, chatroom_name, sender_socket, is_join_message=False):
+    sender_alias = clients[sender_socket]["alias"] if sender_socket in clients else "Server"
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    if is_join_message:
+        # Format join messages as statements instead of regular chat messages
+        formatted_message = f"System: {message}"
     else:
-        clientObj.client.close()
+        formatted_message = f"[{time_stamp}] {sender_alias}: {message}"
 
-def receive():
-    while True:
-        print('Server is running and listening ...')
-        client, address = server.accept()
-        print(f'connection is established with {str(address)}')
-        client.send('alias?'.encode('utf-8'))
-        alias = client.recv(1024)
-        client.send('room?'.encode('utf-8'))
-        room = int(client.recv(1024))
-        clientObj = ClientInfo(alias, client, room)
-        clients[room].append(clientObj)
-        print(f'The alias of this client is {alias}'.encode('utf-8'))
-        broadcast(f'{alias} has connected to chat room {room}'.encode('utf-8'), room)
-        client.send('you are now connected!'.encode('utf-8'))
-        thread = threading.Thread(target=handle_client, args=(clientObj,))
-        thread.start()
+    print(f"[{chatroom_name}] {formatted_message}")  # Logs message on server console
+    send_message_to_clients(formatted_message, chatroom_name)  # Corrected line
 
 
-if __name__ == "__main__":
-    receive()
+def handle_client_message(client_socket, message):
+    if message.startswith('/join') and len(message.split()) > 1:
+        _, chatroom_name = message.split(maxsplit=1)
+        if chatroom_name in chatrooms:
+            prev_chatroom = clients[client_socket]["current_chatroom"]
+            if prev_chatroom in chatrooms:  # Check if the previous chatroom exists
+                chatrooms[prev_chatroom].remove(client_socket)
+            chatrooms[chatroom_name].append(client_socket)
+            clients[client_socket]["current_chatroom"] = chatroom_name
+
+            # Broadcast as a join statement
+            join_message = f"{clients[client_socket]['alias']} has joined chatroom {chatroom_name}."
+            broadcast(join_message, chatroom_name, client_socket, is_join_message=True)
+        else:
+            client_socket.send(f"Chatroom {chatroom_name} does not exist.\n".encode('utf-8'))
+    else:
+        if clients[client_socket]["current_chatroom"]:
+            broadcast(message, clients[client_socket]["current_chatroom"], client_socket)
+        else:
+            client_socket.send("You must join a chatroom to send messages.\n".encode('utf-8'))
+
+def remove_client(client_socket):
+    if client_socket in sockets_list:
+        sockets_list.remove(client_socket)
+    if client_socket in clients:
+        chatroom = clients[client_socket]["current_chatroom"]
+        if chatroom:
+            chatrooms[chatroom].remove(client_socket)
+            print(f"{clients[client_socket]['alias']} has left the chatroom {chatroom}.")
+        del clients[client_socket]
+    client_socket.close()
+
+def generate_random_alias():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+
+print(f"Listening for connections on {HOST}:{PORT}...")
+
+while True:
+    read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
+    for notified_socket in read_sockets:
+        if notified_socket == server_socket:
+            client_socket, client_address = server_socket.accept()
+            alias = generate_random_alias()
+            # Automatically assign new connections to chatroom "0"
+            clients[client_socket] = {"alias": alias, "current_chatroom": "0"}
+            chatrooms["0"].append(client_socket)
+            sockets_list.append(client_socket)
+            print(f"New connection from {client_address[0]}:{client_address[1]} assigned alias {alias} and joined chatroom 0")
+            client_socket.send("Welcome! You have been automatically added to chatroom '0'. Use '/join <chatroom_number>' to switch chatrooms.\n".encode('utf-8'))
+        else:
+            try:
+                message = notified_socket.recv(1024).decode('utf-8').strip()
+                if message:
+                    handle_client_message(notified_socket, message)
+                else:
+                    raise Exception("Client disconnected")
+            except Exception as e:
+                print(f"Error: {e} - Client disconnected.")
+                remove_client(notified_socket)
+
+    for notified_socket in exception_sockets:
+        remove_client(notified_socket)
