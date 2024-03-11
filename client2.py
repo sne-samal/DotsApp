@@ -1,5 +1,5 @@
-from pgpy import PGPKey, PGPMessage
-from pgpy.constants import PubKeyAlgorithm
+from pgpy import PGPKey, PGPMessage, PGPUID
+from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -36,10 +36,12 @@ class Client:
     def check_openpgp_key_pair(self):
         if not os.path.exists(self.openpgp_key_path):
             print("OpenPGP key pair not found. Generating a new key pair...")
-            # Adjusted to use the correct class and method for key generation
             key = PGPKey.new(PubKeyAlgorithm.RSAEncryptOrSign, 4096)
-            # Here you might want to generate both public and private keys
-            # Ensure you're saving both parts as needed
+            uid = PGPUID.new('Client', comment='Client Key')
+            key.add_uid(uid, usage={KeyFlags.Sign, KeyFlags.EncryptCommunications, KeyFlags.EncryptStorage},
+                    hashes=[HashAlgorithm.SHA256, HashAlgorithm.SHA384, HashAlgorithm.SHA512, HashAlgorithm.SHA224],
+                    ciphers=[SymmetricKeyAlgorithm.AES256, SymmetricKeyAlgorithm.AES192, SymmetricKeyAlgorithm.AES128],
+                    compression=[CompressionAlgorithm.ZLIB, CompressionAlgorithm.BZ2, CompressionAlgorithm.ZIP, CompressionAlgorithm.Uncompressed])
             with open(self.openpgp_key_path, 'w') as f:
                 f.write(str(key))
             print(f"New OpenPGP key pair generated and saved to {self.openpgp_key_path}")
@@ -67,7 +69,7 @@ class Client:
                 print(f"Error: {e}")
                 self.socket.close()
                 break
-            
+
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
@@ -197,13 +199,14 @@ class Client:
         ciphertext, iv, tag = encrypted_message.split(b':')
         plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
         return plaintext.decode('utf-8')
-
+    
     def sign_data(self, data):
         with open(self.openpgp_key_path, 'r') as f:
             private_key, _ = PGPKey.from_blob(f.read())
         message = PGPMessage.new(data)
-        return private_key.sign(message).data
-
+        signature = private_key.sign(message)
+        return bytes(signature)
+    
 if __name__ == "__main__":
     HOST = '3.10.53.32'
     PORT = 1492
