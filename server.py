@@ -20,7 +20,7 @@ chatrooms = {str(i): [] for i in range(4)}  # Initializes chatrooms "0", "1", "2
 
 def save_message(chatroom_id, timestamp, message, alias):
     # Create a DynamoDB resource
-    dynamodb = boto3.resource('dynamodb', region_name='eu-north-1')
+    dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')
 
     # Specify the table name
     table_name = 'ChatMessages'
@@ -43,7 +43,7 @@ def save_message(chatroom_id, timestamp, message, alias):
     
 def query_and_broadcast_saved_chats(client_socket, chatroom_id):
     # Create a DynamoDB resource
-    dynamodb = boto3.resource('dynamodb', region_name='eu-north-1')
+    dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')
 
     # Specify the table name
     table_name = 'ChatMessages'
@@ -139,12 +139,13 @@ while True:
         if notified_socket == server_socket:
             client_socket, client_address = server_socket.accept()
             alias = generate_random_alias()
-            # Automatically assign new connections to chatroom "0"
             clients[client_socket] = {"alias": alias, "current_chatroom": "0"}
             chatrooms["0"].append(client_socket)
             sockets_list.append(client_socket)
             print(f"New connection from {client_address[0]}:{client_address[1]} assigned alias {alias} and joined chatroom 0")
-            client_socket.send("Welcome! You have been automatically added to chatroom '0'. Use '/join <chatroom_number>' to switch chatrooms.\n".encode('utf-8'))
+            welcome_message = "Welcome! You have been automatically added to chatroom '0'. Use '/join <chatroom_number>' to switch chatrooms.\n"
+            client_socket.send(welcome_message.encode('utf-8'))
+            query_and_broadcast_saved_chats(client_socket, "0")
         else:
             try:
                 message = notified_socket.recv(1024).decode('utf-8').strip()
