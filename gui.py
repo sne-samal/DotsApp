@@ -40,6 +40,11 @@ class ChatRoom:
         self.chat_log.config(state=tk.NORMAL)
         self.chat_log.insert(tk.END, message + "\n")
         self.chat_log.config(state=tk.DISABLED)
+    
+    def clearLogs(self):
+        self.chat_log.config(state=tk.NORMAL)
+        self.chat_log.delete(1.0, tk.END)
+        self.chat_log.config(state=tk.DISABLED)
 
 
 
