@@ -3,7 +3,7 @@ import tkinter.font as tkFont
 import PIL as pil
 import PIL.ImageTk as ptk
 
-picDir = "C:/Users/snesa/Desktop/info-proc-labs/project/dotsappp.png" # CHANGE THIS TO YOUR DIRECTORY
+picDir = "C:/intelFPGA_lite/18.1/quartus/labs/Team-6/dotsappp.png" # CHANGE THIS TO YOUR DIRECTORY
 
 class ChatRoom:
     def __init__(self, root):
