@@ -37,25 +37,23 @@ class Client:
 
     def handle_incoming_message(self, message):
         if message.startswith(b"/ecdh_key"):
-            print("Received ECDH key")
+            print("[CLIENT] Received ECDH key")
             self.receive_ecdh_key(message)
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
             print(self.parse_server_broadcast(message))
         elif message.startswith(b"/ready"):
-            print("Received ready message")
+            print("[CLIENT] Received server ready message")
             self.send_ecdh_key()
-        elif message.startswith(b"Secure session established. You can now start chatting!"):
-            print('Secure session established.')
         else:
             if self.shared_key:
-                print("Received encrypted message", message)
+                print("[CLIENT] Received encrypted message", message)
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
-                    print(f"Decrypted message: {plaintext}")
+                    print(f"[CLIENT] Decrypted message: {plaintext}")
             else:
-                print("Received unexpected message:", message)
+                print("[CLIENT] Received unexpected message:", message)
     def parse_server_broadcast(self, message_bytes):
         prefix = b"/serverBroadcast "
         
@@ -156,7 +154,7 @@ class Client:
         ciphertext, iv, tag = self.encrypt_message(self.shared_key, message)
         encrypted_message = ciphertext + b':' + iv + b':' + tag
         self.socket.send(encrypted_message)
-        print("Sending encrypted message: ", encrypted_message)
+        print("[CLIENT] Sending encrypted message: ", encrypted_message)
 
     def receive_encrypted_message(self, encrypted_message):
         try:
