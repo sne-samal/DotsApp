@@ -82,17 +82,29 @@ def parse_room_number(text):
         return new_room
     else:
         return -1  # Return -1 if there's no match
+    
+def check_final_character_not_morse(str):
+    if not str:
+        return True
+    
+    # Get the last character of the string
+    last_char = str[-1]
+    
+    # Check if the last character is not an asterisk or a dash
+    return last_char not in ['*', '-']
 
 
 def morse_to_text(input_str):
     # Morse code mapping for single characters
     morse_code_dict = {
-        '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E',
-        '..-.': 'F', '--.': 'G', '....': 'H', '..': 'I', '.---': 'J',
-        '-.-': 'K', '.-..': 'L', '--': 'M', '-.': 'N', '---': 'O',
-        '.--.': 'P', '--.-': 'Q', '.-.': 'R', '...': 'S', '-': 'T',
-        '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X', '-.--': 'Y',
-        '--..': 'Z'
+    '*-': 'A', '-***': 'B', '-*-*': 'C', '-**': 'D', '*': 'E',
+    '**-*': 'F', '--*': 'G', '****': 'H', '**': 'I', '*---': 'J',
+    '-*-': 'K', '*-**': 'L', '--': 'M', '-*': 'N', '---': 'O',
+    '*--*': 'P', '--*-': 'Q', '*-*': 'R', '***': 'S', '-': 'T',
+    '**-': 'U', '***-': 'V', '*--': 'W', '-**-': 'X', '-*--': 'Y',
+    '--**': 'Z',
+    '-----': '0', '*----': '1', '**---': '2', '***--': '3', '****-': '4',
+    '*****': '5', '-****': '6', '--***': '7', '---**': '8', '----*': '9'
     }
     
     for i in range(len(input_str) - 1, -1, -1):
@@ -124,7 +136,7 @@ def ParseNios2(str):
     global send
     perhaps_room = parse_room_number(str)
     if (str == 'Dot'):
-        currentMessage += '.'
+        currentMessage += '*'
         print_curr_msg(currentMessage)
     elif (str == 'Dash'):
         currentMessage += '-'
@@ -133,15 +145,16 @@ def ParseNios2(str):
         change_room(perhaps_room)
     elif (str == 'MORSE_BACKSPACE'):
         if (len(currentMessage) > 0):
-            if (currentMessage[-1] == '.' or '-'):
+            if (currentMessage[-1] == '*' or '-'):
                 currentMessage = currentMessage[:-1]
                 print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_WORD_SPACE'):
-        currentMessage += ' '
-        print_curr_msg(currentMessage)
+        if(check_final_character_not_morse(currentMessage)):
+            currentMessage += ' '
+            print_curr_msg(currentMessage)
     elif (str == 'ENGLISH_CHARACTER_BACKSPACE'): 
         if (len(currentMessage) > 0):
-            if (currentMessage[-1].isalpha()):
+            if (check_final_character_not_morse(currentMessage)):
                 currentMessage = currentMessage[:-1]
                 print_curr_msg(currentMessage)
     elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
@@ -151,7 +164,18 @@ def ParseNios2(str):
         send = True
         #if chat_room:  # check for chat room then .after used to update chat log
         #chat_room.chat_log.after(0, lambda: chat_room.sendMessage(currentMessage))
-
+    elif (str == 'Fullstop'):
+        if(check_final_character_not_morse(currentMessage)):
+            currentMessage += '.'
+    elif (str == 'Comma'):
+        if(check_final_character_not_morse(currentMessage)):
+            currentMessage += ','
+    elif (str == 'Exclamation'):
+        if(check_final_character_not_morse(currentMessage)):
+            currentMessage += '!'
+    elif (str == 'Question'):
+        if(check_final_character_not_morse(currentMessage)):
+            currentMessage += '?'
     else: 
         pass
 
