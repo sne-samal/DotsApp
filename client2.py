@@ -48,6 +48,9 @@ class Client:
         elif message.startswith(b"/serverBroadcast"):
             print("Received server broadcast")
             print(message.decode('utf-8'))
+        elif message.startswith(b"/ready"):
+            print("Received ready message")
+            self.send_ecdh_key()
         elif message.startswith(b"Secure session established. You can now start chatting!"):
             print('Secure session established.')
         else:
@@ -68,7 +71,6 @@ class Client:
                 self.partner_ecdh_public_key = None
                 try:
                     self.socket.send(message.encode('utf-8'))
-                    self.send_ecdh_key()
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
