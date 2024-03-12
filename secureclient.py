@@ -156,6 +156,7 @@ class Client:
         ciphertext, iv, tag = self.encrypt_message(self.shared_key, message)
         encrypted_message = ciphertext + b':' + iv + b':' + tag
         self.socket.send(encrypted_message)
+        print("Sending encrypted message: ", encrypted_message)
 
     def receive_encrypted_message(self, encrypted_message):
         try:
