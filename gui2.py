@@ -82,8 +82,8 @@ class ChatRoom:
         self.chat_log.delete(1.0, tk.END)
         self.chat_log.config(state=tk.DISABLED)
         
-root = tk.Tk()
-
-""" chat_room = ChatRoom(root)
+        
+""" root = tk.Tk()
+chat_room = ChatRoom(root)
 chat_room.sendMessage("Hello, world!\n" * 200)
 root.mainloop() """
