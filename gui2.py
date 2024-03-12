@@ -32,16 +32,16 @@ class ChatRoom:
         self.chat_log.config(yscrollcommand=scrollbar.set)
         
         # Input label
-        input_label=tk.Label(root)
-        input_label["bg"] = "#ffffff"
-        input_label["borderwidth"] = 2
-        input_label["relief"] = "solid"
+        self.input_label=tk.Label(root)
+        self.input_label["bg"] = "#ffffff"
+        self.input_label["borderwidth"] = 2
+        self.input_label["relief"] = "solid"
         ft = tkFont.Font(size=16)
-        input_label["font"] = ft
-        input_label["fg"] = "#333333"
-        input_label["justify"] = "center"
-        input_label["text"] = ""
-        input_label.place(x=0,y=550,width=460,height=45)
+        self.input_label["font"] = ft
+        self.input_label["fg"] = "#333333"
+        self.input_label["justify"] = "center"
+        self.input_label["text"] = ""
+        self.input_label.place(x=0,y=550,width=460,height=45)
 
         # Room label
         room_label=tk.Label(root)
