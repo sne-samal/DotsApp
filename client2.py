@@ -34,8 +34,6 @@ class Client:
                 self.handle_incoming_message(message)
             except Exception as e:
                 print(f"Error: {e}")
-                self.socket.close()
-                break
 
     def handle_incoming_message(self, message):
         print("Received message:", message)
@@ -60,7 +58,7 @@ class Client:
                 if plaintext:
                     print(f"Decrypted message: {plaintext}")
             else:
-                print("Received unexpected message:", message.decode('utf-8'))
+                print("Received unexpected message:", message)
 
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
@@ -150,9 +148,13 @@ class Client:
         self.socket.send(encrypted_message)
 
     def receive_encrypted_message(self, encrypted_message):
-        ciphertext, iv, tag = encrypted_message.split(b':')
-        plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
-        return plaintext.decode('utf-8')
+        try:
+            ciphertext, iv, tag = encrypted_message.split(b':')
+            plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
+            return plaintext.decode('utf-8')
+        except Exception as e:
+            print(f"Error during decryption: {e}")
+            return None
 
 if __name__ == "__main__":
     HOST = '3.8.28.231'
