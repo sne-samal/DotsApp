@@ -6,15 +6,21 @@ import re
 import tkinter as tk
 from gui2 import ChatRoom
 
+gui_ready = threading.Event()
+chat_room
+
 # separate gui thread
 def start_gui():
     root = tk.Tk()
     global chat_room
     chat_room = ChatRoom(root)
+    gui_ready.set()
     root.mainloop()
 
 gui_thread = threading.Thread(target=start_gui)
 gui_thread.start()
+
+gui_ready.wait() 
 
 # Server's IP address
 # If the server is not on this machine,
