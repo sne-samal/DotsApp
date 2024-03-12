@@ -188,7 +188,7 @@ def receive_messages():
             chat_room.chat_log.after(0, lambda m=message: chat_room.sendMessage(m))
         except Exception as e:
             # Any error in receiving data implies the connection is closed
-            print("Disconnected from the server.")
+            print(f"Disconnected from the server: {e}")
             client_socket.close()
             # exit()
             # break
