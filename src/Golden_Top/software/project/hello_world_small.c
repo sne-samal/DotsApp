@@ -114,6 +114,20 @@ int main() {
 
     int send_switch_intial = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
     send_switch_intial &= (0b1000000000);
+
+    // Switch 7 = .
+    // Switch 6 = ,
+    // Switch 5 = !
+    // Switch 4 = ?
+
+    int switch_initial = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
+    int stop_switch, comma_switch, exclamation_switch, question_switch;
+    stop_switch = comma_switch = exclamation_switch = question_switch = switch_initial;
+    stop_switch &= (0b0010000000);
+    comma_switch &= (0b0001000000);
+    exclamation_switch &= (0b0000100000);
+    question_switch &= (0b0000010000);
+
     while (1) {
     	switch_datain = ~IORD_ALTERA_AVALON_PIO_DATA(BUTTON_BASE);
 
@@ -130,6 +144,38 @@ int main() {
     	{
     		printf("Send\n");
     		send_switch_intial = send_switch_datain_new;
+    	}
+
+    	int switch_new = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
+        int stop_switch_new, comma_switch_new, exclamation_switch_new, question_switch_new;
+        stop_switch_new = comma_switch_new = exclamation_switch_new = question_switch_new = switch_new;
+    	stop_switch_new &= (0b0010000000);
+    	comma_switch_new &= (0b0001000000);
+    	exclamation_switch_new &= (0b0000100000);
+    	question_switch_new &= (0b0000010000);
+
+    	if (stop_switch_new != stop_switch)
+    	{
+    		printf("Fullstop\n");
+    		stop_switch = stop_switch_new;
+    	}
+
+    	if (comma_switch_new != comma_switch)
+    	{
+    		printf("Comma\n");
+    		comma_switch = comma_switch_new;
+    	}
+
+    	if (exclamation_switch_new != exclamation_switch)
+    	{
+    		printf("Exclamation\n");
+    		exclamation_switch = exclamation_switch_new;
+    	}
+
+    	if (question_switch_new != question_switch)
+    	{
+    		printf("Question\n");
+    		question_switch = question_switch_new;
     	}
 
 
