@@ -152,18 +152,27 @@ class Client:
 
     def send_encrypted_message(self, message):
         ciphertext, iv, tag = self.encrypt_message(self.shared_key, message)
-        encrypted_message = ciphertext + b':' + iv + b':' + tag
+        # Prefix each part with its length
+        encrypted_message = len(ciphertext).to_bytes(4, 'big') + ciphertext \
+                            + len(iv).to_bytes(4, 'big') + iv \
+                            + len(tag).to_bytes(4, 'big') + tag
         self.socket.send(encrypted_message)
         print("[CLIENT] Sending encrypted message: ", encrypted_message)
 
     def receive_encrypted_message(self, encrypted_message):
         try:
-            ciphertext, iv, tag = encrypted_message.split(b':')
+            # Extract each part by reading its length first
+            iv_start = 4 + int.from_bytes(encrypted_message[:4], 'big')
+            tag_start = iv_start + 4 + int.from_bytes(encrypted_message[iv_start:iv_start+4], 'big')
+            ciphertext = encrypted_message[4:iv_start]
+            iv = encrypted_message[iv_start+4:tag_start]
+            tag = encrypted_message[tag_start+4:]
             plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
             return plaintext.decode('utf-8')
         except Exception as e:
             print(f"Error during decryption: {e}")
             return None
+
 
 if __name__ == "__main__":
     HOST = '3.8.28.231'
