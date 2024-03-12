@@ -39,22 +39,30 @@ class Client:
                 break
 
     def handle_incoming_message(self, message):
+        print("Received message:", message)  # Print the received message
+
         if message.startswith(b"/ecdh_key"):
+            print("Received ECDH key")  # Print a message indicating ECDH key is received
             self.receive_ecdh_key(message)
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
+            print("Received server broadcast")  # Print a message indicating server broadcast is received
             print(message.decode('utf-8'))
         elif message.startswith(b"/serverReady"):
+            print("Received server ready")  # Print a message indicating server ready is received
             print("Server is now ready for DH key exchange")
             self.server_DHReady = True
             self.send_ecdh_key()
         else:
             if self.shared_key:
+                print("Received encrypted message")  # Print a message indicating encrypted message is received
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
                     print(f"Decrypted message: {plaintext}")
-
+            else:
+                print("Received unexpected message:", message.decode('utf-8'))  # Print the unexpected message
+                
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
