@@ -36,16 +36,13 @@ class Client:
                 print(f"Error: {e}")
 
     def handle_incoming_message(self, message):
-        print("Received message:", message)
-
         if message.startswith(b"/ecdh_key"):
             print("Received ECDH key")
             self.receive_ecdh_key(message)
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
-            print("Received server broadcast")
-            print(message.decode('utf-8'))
+            print(self.parse_server_broadcast(message))
         elif message.startswith(b"/ready"):
             print("Received ready message")
             self.send_ecdh_key()
@@ -59,7 +56,20 @@ class Client:
                     print(f"Decrypted message: {plaintext}")
             else:
                 print("Received unexpected message:", message)
-
+    def parse_server_broadcast(self, message_bytes):
+        prefix = b"/serverBroadcast "
+        
+        if message_bytes.startswith(prefix):
+            actual_message = message_bytes[len(prefix):]
+            
+            actual_message_str = actual_message.decode('utf-8')
+            
+            # Format the message as required
+            formatted_message = f"[SERVER] {actual_message_str}"
+            
+            return formatted_message
+        else:
+            return "Message does not start with the required command prefix."
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
