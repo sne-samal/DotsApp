@@ -4,7 +4,7 @@ import sys
 import subprocess
 import re
 import tkinter as tk
-from gui import ChatRoom
+from gui2 import ChatRoom
 
 # separate gui thread
 def start_gui():
