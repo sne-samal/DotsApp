@@ -59,7 +59,7 @@ class ChatRoom:
         new_width = 250
         # new_height = int(new_width / aspect_ratio)
         new_height = 595
-        pic = pic.resize((new_width, new_height), pil.LANCZOS)
+        pic = pic.resize((new_width, new_height), pil.Image.LANCZOS)
         self.photo = ptk.PhotoImage(pic)
 
         # Image label
