@@ -25,7 +25,7 @@ gui_ready.wait()
 # Server's IP address
 # If the server is not on this machine,
 # put the private (network) or public (internet) IP address
-SERVER_HOST = '18.133.73.205'  # The server's hostname or IP address
+SERVER_HOST = '18.169.131.199'  # The server's hostname or IP address
 SERVER_PORT = 1492 
 
 # Nios 2 stuff
