@@ -34,31 +34,40 @@ class Client:
                 self.handle_incoming_message(message)
             except Exception as e:
                 print(f"Error: {e}")
-                self.socket.close()
-                break
 
     def handle_incoming_message(self, message):
-        print("Received message:", message)
-
         if message.startswith(b"/ecdh_key"):
-            print("Received ECDH key")
+            print("[CLIENT] Received ECDH key")
             self.receive_ecdh_key(message)
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
-            print("Received server broadcast")
-            print(message.decode('utf-8'))
-        elif message.startswith(b"Secure session established. You can now start chatting!"):
-            print('Secure session established.')
+            print(self.parse_server_broadcast(message))
+        elif message.startswith(b"/ready"):
+            print("[CLIENT] Received server ready message")
+            self.send_ecdh_key()
         else:
             if self.shared_key:
-                print("Received encrypted message", message)
+                print("[CLIENT] Received encrypted message", message)
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
-                    print(f"Decrypted message: {plaintext}")
+                    print(f"[CLIENT] Decrypted message: {plaintext}")
             else:
-                print("Received unexpected message:", message.decode('utf-8'))
-
+                print("[CLIENT] Received unexpected message:", message)
+    def parse_server_broadcast(self, message_bytes):
+        prefix = b"/serverBroadcast "
+        
+        if message_bytes.startswith(prefix):
+            actual_message = message_bytes[len(prefix):]
+            
+            actual_message_str = actual_message.decode('utf-8')
+            
+            # Format the message as required
+            formatted_message = f"[SERVER] {actual_message_str}"
+            
+            return formatted_message
+        else:
+            return "Message does not start with the required command prefix."
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
@@ -68,7 +77,6 @@ class Client:
                 self.partner_ecdh_public_key = None
                 try:
                     self.socket.send(message.encode('utf-8'))
-                    self.send_ecdh_key()
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
@@ -144,13 +152,27 @@ class Client:
 
     def send_encrypted_message(self, message):
         ciphertext, iv, tag = self.encrypt_message(self.shared_key, message)
-        encrypted_message = ciphertext + b':' + iv + b':' + tag
+        # Prefix each part with its length
+        encrypted_message = len(ciphertext).to_bytes(4, 'big') + ciphertext \
+                            + len(iv).to_bytes(4, 'big') + iv \
+                            + len(tag).to_bytes(4, 'big') + tag
         self.socket.send(encrypted_message)
+        print("[CLIENT] Sending encrypted message: ", encrypted_message)
 
     def receive_encrypted_message(self, encrypted_message):
-        ciphertext, iv, tag = encrypted_message.split(b':')
-        plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
-        return plaintext.decode('utf-8')
+        try:
+            # Extract each part by reading its length first
+            iv_start = 4 + int.from_bytes(encrypted_message[:4], 'big')
+            tag_start = iv_start + 4 + int.from_bytes(encrypted_message[iv_start:iv_start+4], 'big')
+            ciphertext = encrypted_message[4:iv_start]
+            iv = encrypted_message[iv_start+4:tag_start]
+            tag = encrypted_message[tag_start+4:]
+            plaintext = self.decrypt_message(self.shared_key, ciphertext, iv, tag)
+            return plaintext.decode('utf-8')
+        except Exception as e:
+            print(f"Error during decryption: {e}")
+            return None
+
 
 if __name__ == "__main__":
     HOST = '3.8.28.231'

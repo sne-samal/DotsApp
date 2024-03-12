@@ -1,5 +1,6 @@
 import socket
 import select
+import time
 
 HOST = '0.0.0.0'
 PORT = 1492
@@ -11,6 +12,7 @@ server_socket.listen()
 
 sockets_list = [server_socket]
 clients = {}
+userID_counter = 0
 
 def receive_message(client_socket):
     try:
@@ -22,7 +24,9 @@ def receive_message(client_socket):
 
 def handle_new_connection():
     client_socket, client_address = server_socket.accept()
-    userID = len(clients) + 1
+    global userID_counter
+    userID_counter += 1
+    userID = userID_counter
     clients[client_socket] = {"userID": userID, "session_secure": False, "partner_socket": None, "ready_for_secure": False}
     sockets_list.append(client_socket)
     print(f"[SERVER] Accepted new connection from {client_address} with userID {userID}")
@@ -60,12 +64,13 @@ def relay_messages(notified_socket, message):
                 if target_socket:
                     clients[notified_socket]["partner_socket"] = target_socket
                     clients[target_socket]["partner_socket"] = notified_socket
-                    send_server_message(notified_socket, f"Chat initiated with userID {target_userID}. Please wait for the server to be ready.")
-                    send_server_message(target_socket, f"Chat requested by userID {clients[notified_socket]['userID']}. Please wait for the server to be ready.")
+                    send_server_message(notified_socket, f"Chat initiated with userID {target_userID}.")
+                    send_server_message(target_socket, f"Chat requested by userID {clients[notified_socket]['userID']}.")
                     print(f"[SERVER] Chat initiated between userID {clients[notified_socket]['userID']} and userID {target_userID}")
-                    notified_socket.send(b"/serverReady")
-                    target_socket.send(b"/serverReady")
-                    print(f"[SERVER] Sent /serverReady to userID {clients[notified_socket]['userID']} and userID {target_userID}")
+                    notified_socket.send(b"/ready")
+                    time.sleep(1)
+                    target_socket.send(b"/ready")
+                    time.sleep(1)
                 else:
                     send_server_message(notified_socket, f"UserID {target_userID} does not exist.")
             except ValueError:
