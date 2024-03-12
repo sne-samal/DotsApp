@@ -174,15 +174,19 @@ def ParseNios2(str):
     elif (str == 'Fullstop'):
         if(check_final_character_not_morse(currentMessage)):
             currentMessage += '.'
+            print_curr_msg(currentMessage)
     elif (str == 'Comma'):
         if(check_final_character_not_morse(currentMessage)):
             currentMessage += ','
+            print_curr_msg(currentMessage)
     elif (str == 'Exclamation'):
         if(check_final_character_not_morse(currentMessage)):
             currentMessage += '!'
+            print_curr_msg(currentMessage)
     elif (str == 'Question'):
         if(check_final_character_not_morse(currentMessage)):
             currentMessage += '?'
+            print_curr_msg(currentMessage)
     else: 
         pass
 
