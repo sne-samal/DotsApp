@@ -15,7 +15,6 @@ class Client:
         self.port = port
         self.partner_ecdh_public_key = None
         self.shared_key = None
-        self.server_DHReady = False
         try:
             self.socket.connect((self.host, self.port))
         except Exception as e:
@@ -39,65 +38,37 @@ class Client:
                 break
 
     def handle_incoming_message(self, message):
-        print("Received message:", message)  # Print the received message
+        print("Received message:", message)
 
         if message.startswith(b"/ecdh_key"):
-            print("Received ECDH key")  # Print a message indicating ECDH key is received
+            print("Received ECDH key")
             self.receive_ecdh_key(message)
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
-            print("Received server broadcast")  # Print a message indicating server broadcast is received
+            print("Received server broadcast")
             print(message.decode('utf-8'))
-        elif message.startswith(b"/serverReady"):
-            print("Received server ready")  # Print a message indicating server ready is received
-            print("Server is now ready for DH key exchange")
-            self.server_DHReady = True
-            self.send_ecdh_key()
+        elif message.startswith(b"Secure session established. You can now start chatting!"):
+            print('Secure session established.')
         else:
             if self.shared_key:
-                print("Received encrypted message", message.decode('utf-8'))  # Print a message indicating encrypted message is received
+                print("Received encrypted message", message)
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
                     print(f"Decrypted message: {plaintext}")
             else:
-                print("Received unexpected message:", message.decode('utf-8'))  # Print the unexpected message
-                
+                print("Received unexpected message:", message.decode('utf-8'))
+
     def send_commands(self):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
         while True:
             message = input("")
             if message.startswith("/join"):
-                self.server_DHReady = False
                 self.shared_key = None
                 self.partner_ecdh_public_key = None
                 try:
                     self.socket.send(message.encode('utf-8'))
-                    # Wait for the server's response without blocking
-                    retries = 0
-                    max_retries = 5
-                    while not self.server_DHReady:
-                        try:
-                            self.socket.settimeout(5)  # Set a timeout of 5 seconds
-                            response = self.socket.recv(1024).decode('utf-8')
-                            if response:
-                                if response.startswith("UserID"):
-                                    print(response)
-                                    break
-                                elif response.startswith("/serverReady"):
-                                    self.server_DHReady = True
-                        except socket.timeout:
-                            retries += 1
-                            if retries >= max_retries:
-                                print("Error: Timeout waiting for server response. Retrying...")
-                                self.socket.send(message.encode('utf-8'))  # Resend the join message
-                                retries = 0
-                        except OSError as e:
-                            print(f"Error: {e}")
-                            print("Connection closed by the server.")
-                            raise  # Re-raise the exception to be caught by the outer try-except block
-                    else:
-                        self.send_ecdh_key()
+                    self.send_ecdh_key()
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
