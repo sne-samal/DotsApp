@@ -55,13 +55,16 @@ class ChatRoom:
 
         # Open image 
         pic = pil.Image.open(picDir)
-        pic = pic.resize((250, 595), pil.Image.LANCZOS)
+        aspect_ratio = pic.width / pic.height
+        new_width = 250
+        new_height = int(new_width / aspect_ratio)
+        pic = pic.resize((new_width, new_height), pil.LANCZOS)
         self.photo = ptk.PhotoImage(pic)
 
         # Image label
         image_label=tk.Label(root)
         image_label["image"] = self.photo
-        image_label.place(x=460,y=0,width=250,height=595)
+        image_label.place(x=460,y=0,width=new_width,height=new_height)
 
     def setText(self, text):
         self.input_label.config(text=text)
