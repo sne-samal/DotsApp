@@ -1,5 +1,6 @@
 import socket
 import select
+import time
 
 HOST = '0.0.0.0'
 PORT = 1492
@@ -67,7 +68,9 @@ def relay_messages(notified_socket, message):
                     send_server_message(target_socket, f"Chat requested by userID {clients[notified_socket]['userID']}.")
                     print(f"[SERVER] Chat initiated between userID {clients[notified_socket]['userID']} and userID {target_userID}")
                     notified_socket.send(b"/ready")
+                    time.sleep(1)
                     target_socket.send(b"/ready")
+                    time.sleep(1)
                 else:
                     send_server_message(notified_socket, f"UserID {target_userID} does not exist.")
             except ValueError:
