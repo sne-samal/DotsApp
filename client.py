@@ -7,7 +7,6 @@ import tkinter as tk
 from gui2 import ChatRoom
 
 gui_ready = threading.Event()
-chat_room
 
 # separate gui thread
 def start_gui():
@@ -74,6 +73,7 @@ room = 0
 
 # updates input label
 def print_curr_msg(text):
+    global chat_room
     message_to_display = f'{text}\n(Toggle SW9 to send!)'
     #if chat_room:  # check for chatroom
     chat_room.input_label.config(text=message_to_display) 
@@ -131,6 +131,7 @@ def morse_to_text(input_str):
 
 def change_room(newRoom):
     global room
+    global chat_room
     room = newRoom
     client_socket.send(f'/join {room}'.encode('utf-8'))
     #if chat_room: # updates room display
@@ -187,6 +188,7 @@ def ParseNios2(str):
 
 # updates chat log
 def receive_messages():
+    global chat_room
     while True:
         try:
             message = client_socket.recv(1024).decode('utf-8')
