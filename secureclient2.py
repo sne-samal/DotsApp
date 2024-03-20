@@ -69,29 +69,30 @@ class Client:
                 print(f"Error: {e}")
 
     def handle_incoming_message(self, message):
-        if message.startswith(b"/ecdh_key"):
-            print("[CLIENT] Received ECDH key")
-            self.receive_ecdh_key(message)
-            self.generate_shared_key()
-            self.socket.send("/secure".encode('utf-8'))
-        elif message.startswith(b"/serverBroadcast"):
-            formatted_message = self.parse_server_broadcast(message)
-            self.chat_window.config(state='normal')
-            self.chat_window.insert(tk.END, formatted_message + "\n")
-            self.chat_window.config(state='disabled')
-        elif message.startswith(b"/ready"):
-            print("[CLIENT] Received server ready message")
-            self.send_ecdh_key()
+    if message.startswith(b"/ecdh_key"):
+        print("[CLIENT] Received ECDH key")
+        self.receive_ecdh_key(message)
+        self.generate_shared_key()
+        self.socket.send("/secure".encode('utf-8'))
+    elif message.startswith(b"/serverBroadcast"):
+        formatted_message = self.parse_server_broadcast(message)
+        self.display_message(formatted_message)
+    elif message.startswith(b"/ready"):
+        print("[CLIENT] Received server ready message")
+        self.send_ecdh_key()
+    else:
+        if self.shared_key:
+            plaintext = self.receive_encrypted_message(message)
+            if plaintext:
+                self.display_message(f"[INCOMING] {plaintext}")
         else:
-            if self.shared_key:
-                print("[CLIENT] Received encrypted message", message)
-                plaintext = self.receive_encrypted_message(message)
-                if plaintext:
-                    self.chat_window.config(state='normal')
-                    self.chat_window.insert(tk.END, f"[CLIENT] Decrypted message: {plaintext}\n")
-                    self.chat_window.config(state='disabled')
-            else:
-                print("[CLIENT] Received unexpected message:", message)
+            print("[CLIENT] Received unexpected message:", message)
+
+    def display_message(self, message):
+        self.chat_window.config(state='normal')
+        self.chat_window.insert(tk.END, message + "\n")
+        self.chat_window.see(tk.END)
+        self.chat_window.config(state='disabled')
 
     def parse_server_broadcast(self, message_bytes):
         prefix = b"/serverBroadcast "
