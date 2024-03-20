@@ -313,10 +313,22 @@ class ChatApp(tk.Tk):
         self.chat_window = scrolledtext.ScrolledText(self, state='disabled')
         self.chat_window.pack(fill=tk.BOTH, expand=True)
 
-        self.input_box = tk.Text(self, height=3)
-        self.input_box.pack(fill=tk.X)
+        self.input_frame = tk.Frame(self)
+        self.input_frame.pack(fill=tk.X)
+
+        self.input_box = tk.Text(self.input_frame, height=3)
+        self.input_box.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.send_button = tk.Button(self.input_frame, text="Send", command=self.send_message)
+        self.send_button.pack(side=tk.RIGHT)
 
         self.client = Client(HOST, PORT, self.chat_window, self.input_box)
+
+    def send_message(self):
+        message = self.input_box.get("1.0", tk.END).strip()
+        if message:
+            self.client.send_commands(message)
+            self.input_box.delete("1.0", tk.END)
 
     def start(self):
         self.mainloop()
