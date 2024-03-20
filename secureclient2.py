@@ -10,6 +10,7 @@ import threading
 import base64
 import os
 import re
+import subprocess
 
 class Client:
     def __init__(self, host, port, chat_window, input_box):
@@ -33,6 +34,31 @@ class Client:
 
         self.current_message = ""
         self.room = 0
+
+        # Nios 2 stuff
+        NIOS_CMD_SHELL_BAT = "C:/intelFPGA_lite/18.1/nios2eds/Nios II Command Shell.bat"
+        try:
+            process = subprocess.Popen(
+                NIOS_CMD_SHELL_BAT,
+                bufsize=0,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
+            
+            process.stdin.write(f"nios2-terminal.exe\n")
+            process.stdin.flush()  # Flush the input buffer
+
+            while True:
+                line = process.stdout.readline()
+                if not line:  # End of file reached
+                    break
+                else:
+                    self.parse_nios2(line.strip())  # Parse the line (remove trailing newline)
+                if "nios2-terminal: exiting due to ^D on remote" in line:
+                    exit()
+        except KeyboardInterrupt:
+            # Handle abrupt client closure
+            print("\nExiting gracefully...")
 
     def listen_for_messages(self):
         while True:
