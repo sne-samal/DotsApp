@@ -183,6 +183,7 @@ class Client:
             print(f"Error during decryption: {e}")
             return None
 
+
     def send_encrypted_message(self, message):
         ciphertext, iv, tag = self.encrypt_message(self.shared_key, message)
         # Prefix each part with its length
@@ -190,7 +191,14 @@ class Client:
                             + len(iv).to_bytes(4, 'big') + iv \
                             + len(tag).to_bytes(4, 'big') + tag
         self.socket.send(encrypted_message)
-        print("[CLIENT] Sending encrypted message: ", encrypted_message)
+        self.display_message(f"[OUTGOING] Original message: {message}")
+        self.display_message(f"[OUTGOING] Encrypted message: {encrypted_message}")
+
+    def display_message(self, message):
+        self.chat_window.config(state='normal')
+        self.chat_window.insert(tk.END, message + "\n")
+        self.chat_window.see(tk.END)
+        self.chat_window.config(state='disabled')
 
     def receive_encrypted_message(self, encrypted_message):
         try:
