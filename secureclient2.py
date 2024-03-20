@@ -322,16 +322,20 @@ class ChatApp(tk.Tk):
         self.send_button = tk.Button(self.input_frame, text="Send", command=self.send_message)
         self.send_button.pack(side=tk.RIGHT)
 
-        self.client = Client(HOST, PORT, self.chat_window, self.input_box)
+        self.client = None
 
     def send_message(self):
         message = self.input_box.get("1.0", tk.END).strip()
-        if message:
+        if message and self.client:
             self.client.send_commands(message)
             self.input_box.delete("1.0", tk.END)
 
     def start(self):
+        threading.Thread(target=self.start_client, daemon=True).start()
         self.mainloop()
+
+    def start_client(self):
+        self.client = Client(HOST, PORT, self.chat_window, self.input_box)
 
 if __name__ == "__main__":
     HOST = '18.169.194.20'
