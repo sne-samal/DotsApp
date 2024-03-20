@@ -12,13 +12,14 @@ import os
 import re
 
 class Client:
-    def __init__(self, host, port, chat_window):
+    def __init__(self, host, port, chat_window, input_label):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.host = host
         self.port = port
         self.partner_ecdh_public_key = None
         self.shared_key = None
         self.chat_window = chat_window
+        self.input_label = input_label
         try:
             self.socket.connect((self.host, self.port))
         except Exception as e:
@@ -49,7 +50,9 @@ class Client:
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
             formatted_message = self.parse_server_broadcast(message)
+            self.chat_window.config(state='normal')
             self.chat_window.insert(tk.END, formatted_message + "\n")
+            self.chat_window.config(state='disabled')
         elif message.startswith(b"/ready"):
             print("[CLIENT] Received server ready message")
             self.send_ecdh_key()
@@ -58,13 +61,14 @@ class Client:
                 print("[CLIENT] Received encrypted message", message)
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
+                    self.chat_window.config(state='normal')
                     self.chat_window.insert(tk.END, f"[CLIENT] Decrypted message: {plaintext}\n")
+                    self.chat_window.config(state='disabled')
             else:
                 print("[CLIENT] Received unexpected message:", message)
 
     def parse_server_broadcast(self, message_bytes):
         prefix = b"/serverBroadcast "
-        
         if message_bytes.startswith(prefix):
             actual_message = message_bytes[len(prefix):]
             actual_message_str = actual_message.decode('utf-8')
@@ -218,7 +222,9 @@ class Client:
     def change_room(self, newRoom):
         self.room = newRoom
         self.send_commands(f'/join {self.room}')
+        self.chat_window.config(state='normal')
         self.chat_window.delete('1.0', tk.END)
+        self.chat_window.config(state='disabled')
 
     def parse_nios2(self, str):
         perhaps_room = self.parse_room_number(str)
@@ -284,8 +290,7 @@ class ChatApp(tk.Tk):
         self.input_label = tk.Label(self, text="")
         self.input_label.pack()
 
-        self.client = Client(HOST, PORT, self.chat_window)
-        self.client.input_label = self.input_label
+        self.client = Client(HOST, PORT, self.chat_window, self.input_label)
 
     def start(self):
         self.mainloop()
