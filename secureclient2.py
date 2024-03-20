@@ -88,6 +88,8 @@ class Client:
             else:
                 print("[CLIENT] Received unexpected message:", message)
 
+
+    
     def display_message(self, message):
         self.chat_window.config(state='normal')
         self.chat_window.insert(tk.END, message + "\n")
@@ -325,12 +327,20 @@ class ChatApp(tk.Tk):
 
         self.client = None
 
+
     def send_message(self):
         message = self.input_box.get("1.0", tk.END).strip()
         if message and self.client:
             self.client.send_commands(message)
+            self.display_message(f"[OUTGOING] {message}")
             self.input_box.delete("1.0", tk.END)
 
+    def display_message(self, message):
+        self.chat_window.config(state='normal')
+        self.chat_window.insert(tk.END, message + "\n")
+        self.chat_window.see(tk.END)
+        self.chat_window.config(state='disabled')
+        
     def start(self):
         threading.Thread(target=self.start_client, daemon=True).start()
         self.mainloop()
