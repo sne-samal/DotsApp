@@ -69,24 +69,24 @@ class Client:
                 print(f"Error: {e}")
 
     def handle_incoming_message(self, message):
-    if message.startswith(b"/ecdh_key"):
-        print("[CLIENT] Received ECDH key")
-        self.receive_ecdh_key(message)
-        self.generate_shared_key()
-        self.socket.send("/secure".encode('utf-8'))
-    elif message.startswith(b"/serverBroadcast"):
-        formatted_message = self.parse_server_broadcast(message)
-        self.display_message(formatted_message)
-    elif message.startswith(b"/ready"):
-        print("[CLIENT] Received server ready message")
-        self.send_ecdh_key()
-    else:
-        if self.shared_key:
-            plaintext = self.receive_encrypted_message(message)
-            if plaintext:
-                self.display_message(f"[INCOMING] {plaintext}")
+        if message.startswith(b"/ecdh_key"):
+            print("[CLIENT] Received ECDH key")
+            self.receive_ecdh_key(message)
+            self.generate_shared_key()
+            self.socket.send("/secure".encode('utf-8'))
+        elif message.startswith(b"/serverBroadcast"):
+            formatted_message = self.parse_server_broadcast(message)
+            self.display_message(formatted_message)
+        elif message.startswith(b"/ready"):
+            print("[CLIENT] Received server ready message")
+            self.send_ecdh_key()
         else:
-            print("[CLIENT] Received unexpected message:", message)
+            if self.shared_key:
+                plaintext = self.receive_encrypted_message(message)
+                if plaintext:
+                    self.display_message(f"[INCOMING] {plaintext}")
+            else:
+                print("[CLIENT] Received unexpected message:", message)
 
     def display_message(self, message):
         self.chat_window.config(state='normal')
