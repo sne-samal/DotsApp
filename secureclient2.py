@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import scrolledtext
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -7,162 +9,16 @@ import socket
 import threading
 import base64
 import os
-import sys
-import subprocess
 import re
-import tkinter as tk
-from gui2 import ChatRoom
-
-gui_ready = threading.Event()
-
-# separate gui thread
-def start_gui():
-    root = tk.Tk()
-    global chat_room
-    chat_room = ChatRoom(root)
-    gui_ready.set()
-    root.mainloop()
-
-gui_thread = threading.Thread(target=start_gui)
-gui_thread.start()
-
-gui_ready.wait() 
-
-
-# Nios 2 stuff
-NIOS_CMD_SHELL_BAT = "C:/intelFPGA_lite/18.1/nios2eds/Nios II Command Shell.bat"
-
-currentMessage = ""
-room = 0
-
-# updates input label
-def print_curr_msg(text):
-    global chat_room
-    message_to_display = f'{text}\n(Toggle SW9 to send!)'
-    #if chat_room:  # check for chatroom
-    chat_room.input_label.config(text=message_to_display) 
-    #else:
-        #print(message_to_display) 
-
-def parse_room_number(text):
-    match = re.search(r"New room number: (\d+)", text)
-    if match:
-        new_room = int(match.group(1))  # Convert the matched number to an integer
-        #change_room(new_room)
-        return new_room
-    else:
-        return -1  # Return -1 if there's no match
-    
-def check_final_character_not_morse(str):
-    if not str:
-        return True
-    
-    # Get the last character of the string
-    last_char = str[-1]
-    
-    # Check if the last character is not an asterisk or a dash
-    return last_char not in ['*', '-']
-
-
-def morse_to_text(input_str):
-    # Morse code mapping for single characters
-    morse_code_dict = {
-    '*-': 'A', '-***': 'B', '-*-*': 'C', '-**': 'D', '*': 'E',
-    '**-*': 'F', '--*': 'G', '****': 'H', '**': 'I', '*---': 'J',
-    '-*-': 'K', '*-**': 'L', '--': 'M', '-*': 'N', '---': 'O',
-    '*--*': 'P', '--*-': 'Q', '*-*': 'R', '***': 'S', '-': 'T',
-    '**-': 'U', '***-': 'V', '*--': 'W', '-**-': 'X', '-*--': 'Y',
-    '--**': 'Z',
-    '-----': '0', '*----': '1', '**---': '2', '***--': '3', '****-': '4',
-    '*****': '5', '-****': '6', '--***': '7', '---**': '8', '----*': '9'
-    }
-    
-    for i in range(len(input_str) - 1, -1, -1):
-        if (input_str[i].isalpha() or input_str[i] == ' '):
-            plaintext_part = input_str[:i+1]
-            morse_part = input_str[i+1:]
-            break
-    else:
-        # In case the entire string is Morse code
-        plaintext_part = ''
-        morse_part = input_str
-    
-    # Convert Morse code part to text
-    morse_character = morse_code_dict.get(morse_part, '')
-
-    # Concatenate and return the result
-    return plaintext_part + morse_character
-
-def change_room(newRoom):
-    global room
-    global chat_room
-    room = newRoom
-    client.send_commands(f'/join {room}'.encode('utf-8'))
-    #if chat_room: # updates room display
-    #chat_room.setRoom(room)
-    chat_room.clearLogs()
-
-def ParseNios2(str):
-    global currentMessage
-    global send
-    perhaps_room = parse_room_number(str)
-    if (str == 'Dot'):
-        currentMessage += '*'
-        print_curr_msg(currentMessage)
-    elif (str == 'Dash'):
-        currentMessage += '-'
-        print_curr_msg(currentMessage)
-    elif (perhaps_room > -1):
-        change_room(perhaps_room)
-    elif (str == 'MORSE_BACKSPACE'):
-        if (len(currentMessage) > 0):
-            if (currentMessage[-1] == '*' or '-'):
-                currentMessage = currentMessage[:-1]
-                print_curr_msg(currentMessage)
-    elif (str == 'ENGLISH_WORD_SPACE'):
-        if(check_final_character_not_morse(currentMessage)):
-            currentMessage += ' '
-            print_curr_msg(currentMessage)
-    elif (str == 'ENGLISH_CHARACTER_BACKSPACE'): 
-        if (len(currentMessage) > 0):
-            if (check_final_character_not_morse(currentMessage)):
-                currentMessage = currentMessage[:-1]
-                print_curr_msg(currentMessage)
-    elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
-            currentMessage  = morse_to_text(currentMessage)
-            print_curr_msg(currentMessage)
-    elif (str == 'Send'): #updates chat log
-        print("debug: " + currentMessage)
-        client.send_commands(currentMessage)
-
-        currentMessage = ""
-        print_curr_msg(currentMessage)
-    elif (str == 'Fullstop'):
-        if(check_final_character_not_morse(currentMessage)):
-            currentMessage += '.'
-            print_curr_msg(currentMessage)
-    elif (str == 'Comma'):
-        if(check_final_character_not_morse(currentMessage)):
-            currentMessage += ','
-            print_curr_msg(currentMessage)
-    elif (str == 'Exclamation'):
-        if(check_final_character_not_morse(currentMessage)):
-            currentMessage += '!'
-            print_curr_msg(currentMessage)
-    elif (str == 'Question'):
-        if(check_final_character_not_morse(currentMessage)):
-            currentMessage += '?'
-            print_curr_msg(currentMessage)
-    else: 
-        pass
 
 class Client:
-    def __init__(self, host, port):
+    def __init__(self, host, port, chat_window):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.host = host
         self.port = port
         self.partner_ecdh_public_key = None
         self.shared_key = None
+        self.chat_window = chat_window
         try:
             self.socket.connect((self.host, self.port))
         except Exception as e:
@@ -173,35 +29,11 @@ class Client:
         self.ecdh_public_key = self.ecdh_private_key.public_key()
 
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
-    
-    
-        try:
-            process = subprocess.Popen(
-                NIOS_CMD_SHELL_BAT,
-                bufsize=0,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                universal_newlines=True)
-            
-            process.stdin.write(f"nios2-terminal.exe\n")
-            process.stdin.flush()  # Flush the input buffer
 
-            while True:
-                line = process.stdout.readline()
-                if not line:  # End of file reached
-                    break
-                else:
-                    ParseNios2(line.strip())  # Print the line (remove trailing newline)
-                if "nios2-terminal: exiting due to ^D on remote" in line:
-                    exit 
-                    # quit
-        except KeyboardInterrupt:
-            # Handle abrupt client closure
-            print("\nExiting gracefully...")
-            #quit
+        self.current_message = ""
+        self.room = 0
 
-
-    def listen_for_messages(self,):
+    def listen_for_messages(self):
         while True:
             try:
                 message = self.socket.recv(4096)
@@ -216,7 +48,8 @@ class Client:
             self.generate_shared_key()
             self.socket.send("/secure".encode('utf-8'))
         elif message.startswith(b"/serverBroadcast"):
-            print(self.parse_server_broadcast(message))
+            formatted_message = self.parse_server_broadcast(message)
+            self.chat_window.insert(tk.END, formatted_message + "\n")
         elif message.startswith(b"/ready"):
             print("[CLIENT] Received server ready message")
             self.send_ecdh_key()
@@ -225,26 +58,22 @@ class Client:
                 print("[CLIENT] Received encrypted message", message)
                 plaintext = self.receive_encrypted_message(message)
                 if plaintext:
-                    print(f"[CLIENT] Decrypted message: {plaintext}")
+                    self.chat_window.insert(tk.END, f"[CLIENT] Decrypted message: {plaintext}\n")
             else:
                 print("[CLIENT] Received unexpected message:", message)
+
     def parse_server_broadcast(self, message_bytes):
         prefix = b"/serverBroadcast "
         
         if message_bytes.startswith(prefix):
             actual_message = message_bytes[len(prefix):]
-            
             actual_message_str = actual_message.decode('utf-8')
-            
-            # Format the message as required
             formatted_message = f"[SERVER] {actual_message_str}"
-            
             return formatted_message
         else:
             return "Message does not start with the required command prefix."
+
     def send_commands(self, message):
-        print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
-        # message = input("")
         if message.startswith("/join"):
             self.shared_key = None
             self.partner_ecdh_public_key = None
@@ -344,20 +173,126 @@ class Client:
             print(f"Error during decryption: {e}")
             return None
 
+    def print_curr_msg(self, text):
+        message_to_display = f'{text}\n(Toggle SW9 to send!)'
+        self.input_label.config(text=message_to_display)
 
+    def parse_room_number(self, text):
+        match = re.search(r"New room number: (\d+)", text)
+        if match:
+            new_room = int(match.group(1))
+            return new_room
+        else:
+            return -1
+
+    def check_final_character_not_morse(self, str):
+        if not str:
+            return True
+        last_char = str[-1]
+        return last_char not in ['*', '-']
+
+    def morse_to_text(self, input_str):
+        morse_code_dict = {
+            '*-': 'A', '-***': 'B', '-*-*': 'C', '-**': 'D', '*': 'E',
+            '**-*': 'F', '--*': 'G', '****': 'H', '**': 'I', '*---': 'J',
+            '-*-': 'K', '*-**': 'L', '--': 'M', '-*': 'N', '---': 'O',
+            '*--*': 'P', '--*-': 'Q', '*-*': 'R', '***': 'S', '-': 'T',
+            '**-': 'U', '***-': 'V', '*--': 'W', '-**-': 'X', '-*--': 'Y',
+            '--**': 'Z',
+            '-----': '0', '*----': '1', '**---': '2', '***--': '3', '****-': '4',
+            '*****': '5', '-****': '6', '--***': '7', '---**': '8', '----*': '9'
+        }
+
+        for i in range(len(input_str) - 1, -1, -1):
+            if (input_str[i].isalpha() or input_str[i] == ' '):
+                plaintext_part = input_str[:i+1]
+                morse_part = input_str[i+1:]
+                break
+        else:
+            plaintext_part = ''
+            morse_part = input_str
+
+        morse_character = morse_code_dict.get(morse_part, '')
+        return plaintext_part + morse_character
+
+    def change_room(self, newRoom):
+        self.room = newRoom
+        self.send_commands(f'/join {self.room}')
+        self.chat_window.delete('1.0', tk.END)
+
+    def parse_nios2(self, str):
+        perhaps_room = self.parse_room_number(str)
+        if (str == 'Dot'):
+            self.current_message += '*'
+            self.print_curr_msg(self.current_message)
+        elif (str == 'Dash'):
+            self.current_message += '-'
+            self.print_curr_msg(self.current_message)
+        elif (perhaps_room > -1):
+            self.change_room(perhaps_room)
+        elif (str == 'MORSE_BACKSPACE'):
+            if (len(self.current_message) > 0):
+                if (self.current_message[-1] == '*' or '-'):
+                    self.current_message = self.current_message[:-1]
+                    self.print_curr_msg(self.current_message)
+        elif (str == 'ENGLISH_WORD_SPACE'):
+            if(self.check_final_character_not_morse(self.current_message)):
+                self.current_message += ' '
+                self.print_curr_msg(self.current_message)
+        elif (str == 'ENGLISH_CHARACTER_BACKSPACE'):
+            if (len(self.current_message) > 0):
+                if (self.check_final_character_not_morse(self.current_message)):
+                    self.current_message = self.current_message[:-1]
+                    self.print_curr_msg(self.current_message)
+        elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
+            self.current_message = self.morse_to_text(self.current_message)
+            self.print_curr_msg(self.current_message)
+        elif (str == 'Send'):
+            print("debug: " + self.current_message)
+            self.send_commands(self.current_message)
+            self.current_message = ""
+            self.print_curr_msg(self.current_message)
+        elif (str == 'Fullstop'):
+            if(self.check_final_character_not_morse(self.current_message)):
+                self.current_message += '.'
+                self.print_curr_msg(self.current_message)
+        elif (str == 'Comma'):
+            if(self.check_final_character_not_morse(self.current_message)):
+                self.current_message += ','
+                self.print_curr_msg(self.current_message)
+        elif (str == 'Exclamation'):
+            if(self.check_final_character_not_morse(self.current_message)):
+                self.current_message += '!'
+                self.print_curr_msg(self.current_message)
+        elif (str == 'Question'):
+            if(self.check_final_character_not_morse(self.current_message)):
+                self.current_message += '?'
+                self.print_curr_msg(self.current_message)
+        else:
+            pass
+
+class ChatApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("Chat App")
+        self.geometry("400x400")
+
+        self.chat_window = scrolledtext.ScrolledText(self, state='disabled')
+        self.chat_window.pack(fill=tk.BOTH, expand=True)
+
+        self.input_label = tk.Label(self, text="")
+        self.input_label.pack()
+
+        self.client = Client(HOST, PORT, self.chat_window)
+        self.client.input_label = self.input_label
+
+    def start(self):
+        self.mainloop()
 
 if __name__ == "__main__":
-    global client
     HOST = '18.169.194.20'
     PORT = 1492
-    client = Client(HOST, PORT)
 
-
-
-
-
-
-
-
-
-
+    app = ChatApp()
+    app.start()
