@@ -12,14 +12,14 @@ import os
 import re
 
 class Client:
-    def __init__(self, host, port, chat_window, input_label):
+    def __init__(self, host, port, chat_window, input_box):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.host = host
         self.port = port
         self.partner_ecdh_public_key = None
         self.shared_key = None
         self.chat_window = chat_window
-        self.input_label = input_label
+        self.input_box = input_box
         try:
             self.socket.connect((self.host, self.port))
         except Exception as e:
@@ -177,9 +177,9 @@ class Client:
             print(f"Error during decryption: {e}")
             return None
 
-    def print_curr_msg(self, text):
-        message_to_display = f'{text}\n(Toggle SW9 to send!)'
-        self.input_label.config(text=message_to_display)
+    def update_input_box(self, text):
+        self.input_box.delete('1.0', tk.END)
+        self.input_box.insert(tk.END, text)
 
     def parse_room_number(self, text):
         match = re.search(r"New room number: (\d+)", text)
@@ -230,50 +230,50 @@ class Client:
         perhaps_room = self.parse_room_number(str)
         if (str == 'Dot'):
             self.current_message += '*'
-            self.print_curr_msg(self.current_message)
+            self.update_input_box(self.current_message)
         elif (str == 'Dash'):
             self.current_message += '-'
-            self.print_curr_msg(self.current_message)
+            self.update_input_box(self.current_message)
         elif (perhaps_room > -1):
             self.change_room(perhaps_room)
         elif (str == 'MORSE_BACKSPACE'):
             if (len(self.current_message) > 0):
                 if (self.current_message[-1] == '*' or '-'):
                     self.current_message = self.current_message[:-1]
-                    self.print_curr_msg(self.current_message)
+                    self.update_input_box(self.current_message)
         elif (str == 'ENGLISH_WORD_SPACE'):
             if(self.check_final_character_not_morse(self.current_message)):
                 self.current_message += ' '
-                self.print_curr_msg(self.current_message)
+                self.update_input_box(self.current_message)
         elif (str == 'ENGLISH_CHARACTER_BACKSPACE'):
             if (len(self.current_message) > 0):
                 if (self.check_final_character_not_morse(self.current_message)):
                     self.current_message = self.current_message[:-1]
-                    self.print_curr_msg(self.current_message)
+                    self.update_input_box(self.current_message)
         elif (str == 'CONFIRM_ENGLISH_CHARACTER'):
             self.current_message = self.morse_to_text(self.current_message)
-            self.print_curr_msg(self.current_message)
+            self.update_input_box(self.current_message)
         elif (str == 'Send'):
             print("debug: " + self.current_message)
             self.send_commands(self.current_message)
             self.current_message = ""
-            self.print_curr_msg(self.current_message)
+            self.update_input_box(self.current_message)
         elif (str == 'Fullstop'):
             if(self.check_final_character_not_morse(self.current_message)):
                 self.current_message += '.'
-                self.print_curr_msg(self.current_message)
+                self.update_input_box(self.current_message)
         elif (str == 'Comma'):
             if(self.check_final_character_not_morse(self.current_message)):
                 self.current_message += ','
-                self.print_curr_msg(self.current_message)
+                self.update_input_box(self.current_message)
         elif (str == 'Exclamation'):
             if(self.check_final_character_not_morse(self.current_message)):
                 self.current_message += '!'
-                self.print_curr_msg(self.current_message)
+                self.update_input_box(self.current_message)
         elif (str == 'Question'):
             if(self.check_final_character_not_morse(self.current_message)):
                 self.current_message += '?'
-                self.print_curr_msg(self.current_message)
+                self.update_input_box(self.current_message)
         else:
             pass
 
@@ -287,10 +287,10 @@ class ChatApp(tk.Tk):
         self.chat_window = scrolledtext.ScrolledText(self, state='disabled')
         self.chat_window.pack(fill=tk.BOTH, expand=True)
 
-        self.input_label = tk.Label(self, text="")
-        self.input_label.pack()
+        self.input_box = tk.Text(self, height=3)
+        self.input_box.pack(fill=tk.X)
 
-        self.client = Client(HOST, PORT, self.chat_window, self.input_label)
+        self.client = Client(HOST, PORT, self.chat_window, self.input_box)
 
     def start(self):
         self.mainloop()
