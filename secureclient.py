@@ -175,6 +175,6 @@ class Client:
 
 
 if __name__ == "__main__":
-    HOST = '3.8.28.231'
+    HOST = '18.169.194.20'
     PORT = 1492
     client = Client(HOST, PORT)

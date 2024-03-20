@@ -28,6 +28,7 @@ gui_thread.start()
 
 gui_ready.wait() 
 
+
 # Nios 2 stuff
 NIOS_CMD_SHELL_BAT = "C:/intelFPGA_lite/18.1/nios2eds/Nios II Command Shell.bat"
 
@@ -96,7 +97,7 @@ def change_room(newRoom):
     global room
     global chat_room
     room = newRoom
-    Client.send_commands(f'/join {room}'.encode('utf-8'))
+    client.send_commands(f'/join {room}'.encode('utf-8'))
     #if chat_room: # updates room display
     #chat_room.setRoom(room)
     chat_room.clearLogs()
@@ -131,7 +132,9 @@ def ParseNios2(str):
             currentMessage  = morse_to_text(currentMessage)
             print_curr_msg(currentMessage)
     elif (str == 'Send'): #updates chat log
-        Client.send_commands(currentMessage)
+        print("debug: " + currentMessage)
+        client.send_commands(currentMessage)
+
         currentMessage = ""
         print_curr_msg(currentMessage)
     elif (str == 'Fullstop'):
@@ -170,7 +173,33 @@ class Client:
         self.ecdh_public_key = self.ecdh_private_key.public_key()
 
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
-        self.send_commands()
+    
+    
+        try:
+            process = subprocess.Popen(
+                NIOS_CMD_SHELL_BAT,
+                bufsize=0,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
+            
+            process.stdin.write(f"nios2-terminal.exe\n")
+            process.stdin.flush()  # Flush the input buffer
+
+            while True:
+                line = process.stdout.readline()
+                if not line:  # End of file reached
+                    break
+                else:
+                    ParseNios2(line.strip())  # Print the line (remove trailing newline)
+                if "nios2-terminal: exiting due to ^D on remote" in line:
+                    exit 
+                    # quit
+        except KeyboardInterrupt:
+            # Handle abrupt client closure
+            print("\nExiting gracefully...")
+            #quit
+
 
     def listen_for_messages(self,):
         while True:
@@ -215,27 +244,24 @@ class Client:
             return "Message does not start with the required command prefix."
     def send_commands(self, message):
         print("Connected to the server. Type '/join [userID]' to start chatting with someone.")
-        while True:
-            # message = input("")
-            if message.startswith("/join"):
-                self.shared_key = None
-                self.partner_ecdh_public_key = None
+        # message = input("")
+        if message.startswith("/join"):
+            self.shared_key = None
+            self.partner_ecdh_public_key = None
+            try:
+                self.socket.send(message.encode('utf-8'))
+            except OSError as e:
+                print(f"Error: {e}")
+                print("Connection closed by the server.")
+        elif message.startswith("/") or (message and self.shared_key):
+            if self.shared_key:
+                self.send_encrypted_message(message)
+            else:
                 try:
                     self.socket.send(message.encode('utf-8'))
                 except OSError as e:
                     print(f"Error: {e}")
                     print("Connection closed by the server.")
-                    break  # Exit the loop if the connection is closed
-            elif message.startswith("/") or (message and self.shared_key):
-                if self.shared_key:
-                    self.send_encrypted_message(message)
-                else:
-                    try:
-                        self.socket.send(message.encode('utf-8'))
-                    except OSError as e:
-                        print(f"Error: {e}")
-                        print("Connection closed by the server.")
-                        break  # Exit the loop if the connection is closed
 
     def send_ecdh_key(self):
         public_key_bytes = self.ecdh_public_key.public_bytes(
@@ -318,33 +344,20 @@ class Client:
             print(f"Error during decryption: {e}")
             return None
 
-try:
-    process = subprocess.Popen(
-        NIOS_CMD_SHELL_BAT,
-        bufsize=0,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        universal_newlines=True)
-    
-    process.stdin.write(f"nios2-terminal.exe --cable 1\n")
-    process.stdin.flush()  # Flush the input buffer
 
-    while True:
-        line = process.stdout.readline()
-        if not line:  # End of file reached
-            break
-        else:
-            ParseNios2(line.strip())  # Print the line (remove trailing newline)
-        if "nios2-terminal: exiting due to ^D on remote" in line:
-            exit 
-            # quit
-
-except KeyboardInterrupt:
-    # Handle abrupt client closure
-    print("\nExiting gracefully...")
-    #quit
 
 if __name__ == "__main__":
-    HOST = '3.8.28.231'
+    global client
+    HOST = '18.169.194.20'
     PORT = 1492
     client = Client(HOST, PORT)
+
+
+
+
+
+
+
+
+
+
