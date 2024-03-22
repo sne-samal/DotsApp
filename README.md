@@ -25,3 +25,8 @@ A FPGA and morse code chatting application.
 - On the second terminal run `python <path>/client_duplicate.py`
 - Start typing in Morse from either FPGA
 
+### Usage - Encrypted Chat
+- Instead of running `python <path>/client.py`, run `python <path>/secureclient2.py`
+
+### Video demonstration
+https://youtu.be/0Z9BxCR3ug8
