@@ -40,7 +40,7 @@ def save_message(chatroom_id, timestamp, message, alias):
     except ClientError as e:
         print(f"An error occurred: {e.response['Error']['Message']}")
         return None
-    
+
 def query_and_broadcast_saved_chats(client_socket, chatroom_id):
     # Create a DynamoDB resource
     dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')
