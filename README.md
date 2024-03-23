@@ -26,6 +26,7 @@ A FPGA and morse code chatting application.
 - Start typing in Morse from either FPGA
 
 ### Usage - Encrypted Chat
+- Run secureserver.py instead of server.py
 - Instead of running `python <path>/client.py`, run `python <path>/secureclient2.py`
 
 ### Video demonstration
